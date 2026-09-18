@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rozana-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "rozana-dashboard", "run", "dev"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
