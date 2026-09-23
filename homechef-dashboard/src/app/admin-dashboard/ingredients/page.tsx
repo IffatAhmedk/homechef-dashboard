@@ -11,6 +11,7 @@ interface Ingredient {
   name: string;
   unit: string;
   costPerUnit: number;
+  category: "FOOD" | "PACKAGING";
 }
 
 export default function IngredientsPage() {
@@ -19,7 +20,12 @@ export default function IngredientsPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [newIngredient, setNewIngredient] = useState({ name: "", unit: "", costPerUnit: "" });
+  const [newIngredient, setNewIngredient] = useState<{ name: string; unit: string; costPerUnit: string; category: "FOOD" | "PACKAGING" }>({
+    name: "",
+    unit: "",
+    costPerUnit: "",
+    category: "FOOD",
+  });
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +40,17 @@ export default function IngredientsPage() {
     await mutate("/api/ingredients");
     await mutate("/api/menu");
     setSavingId(null);
+  }
+
+  async function toggleCategory(ingredient: Ingredient) {
+    const category = ingredient.category === "FOOD" ? "PACKAGING" : "FOOD";
+    await fetch(`/api/ingredients/${ingredient.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category }),
+    });
+    await mutate("/api/ingredients");
+    await mutate("/api/menu");
   }
 
   async function deleteIngredient(id: string) {
@@ -58,11 +75,12 @@ export default function IngredientsPage() {
         name: newIngredient.name,
         unit: newIngredient.unit,
         costPerUnit: Number(newIngredient.costPerUnit),
+        category: newIngredient.category,
       }),
     });
     if (res.ok) {
       await mutate("/api/ingredients");
-      setNewIngredient({ name: "", unit: "", costPerUnit: "" });
+      setNewIngredient({ name: "", unit: "", costPerUnit: "", category: "FOOD" });
       setShowAdd(false);
     } else {
       const data = await res.json();
@@ -122,6 +140,14 @@ export default function IngredientsPage() {
             onChange={(e) => setNewIngredient({ ...newIngredient, costPerUnit: e.target.value })}
             className="rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
           />
+          <select
+            value={newIngredient.category}
+            onChange={(e) => setNewIngredient({ ...newIngredient, category: e.target.value as "FOOD" | "PACKAGING" })}
+            className="rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+          >
+            <option value="FOOD">Food</option>
+            <option value="PACKAGING">Packaging</option>
+          </select>
           {error && <p className="text-sm text-maroon sm:col-span-4">{error}</p>}
           <button
             type="submit"
@@ -140,6 +166,7 @@ export default function IngredientsPage() {
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Unit</th>
               <th className="px-4 py-3 font-medium">Cost per unit</th>
+              <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
@@ -162,6 +189,16 @@ export default function IngredientsPage() {
                       />
                       <span className="text-xs text-charcoal/40">/ {ing.unit}</span>
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => toggleCategory(ing)}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        ing.category === "PACKAGING" ? "bg-warm-beige/40 text-charcoal/70" : "bg-sage/10 text-sage"
+                      }`}
+                    >
+                      {ing.category === "PACKAGING" ? "Packaging" : "Food"}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">

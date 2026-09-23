@@ -5,16 +5,18 @@ import Papa from "papaparse";
 import { mutate } from "swr";
 import { X, Upload, Download } from "lucide-react";
 
-const TEMPLATE = `name,unit,cost_per_unit
-Flour,kg,180
-Egg,piece,25
-Cooking Oil,ml,0.6
+const TEMPLATE = `name,unit,cost_per_unit,category
+Flour,kg,180,food
+Egg,piece,25,food
+Cooking Oil,ml,0.6,food
+Takeaway Box - Medium,piece,15,packaging
 `;
 
 interface RawRow {
   name: string;
   unit: string;
   cost_per_unit: string;
+  category?: string;
 }
 
 interface ImportResult {

@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
               quantity: it.quantity,
               priceAtSale: menuItem.price,
               costAtSale: menuItem.costPrice,
+              packagingCostAtSale: menuItem.packagingCostPrice,
             };
           }),
         },

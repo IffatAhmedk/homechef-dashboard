@@ -20,6 +20,32 @@ function parseMoney(v: string | number | undefined): number {
   return Number(String(v).replace(/,/g, "")) || 0;
 }
 
+/**
+ * Parses Foodpanda's order-details export (.csv or .xlsx) into row objects keyed by header.
+ * The .xlsx version groups columns under section labels (Income, Deductions, ...) on the
+ * first row, with the real field names ("Order ID", "Subtotal", ...) one row below — this
+ * detects that layout and skips down to the real header row before reading data.
+ */
+async function parseOrderDetailsFile(file: File): Promise<Record<string, string | number | Date>[]> {
+  const isExcel = /\.xlsx?$/i.test(file.name);
+  if (!isExcel) {
+    return new Promise((resolve) => {
+      Papa.parse<Record<string, string>>(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (res) => resolve(res.data),
+      });
+    });
+  }
+  const buf = await file.arrayBuffer();
+  const workbook = XLSX.read(buf, { type: "array", cellDates: true });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json<(string | number)[]>(sheet, { header: 1 });
+  const headerRowIndex = raw.findIndex((row) => row.includes("Order ID"));
+  const range = headerRowIndex > 0 ? headerRowIndex : 0;
+  return XLSX.utils.sheet_to_json<Record<string, string | number | Date>>(sheet, { range });
+}
+
 interface RawRow {
   order_ref?: string;
   date?: string;
@@ -65,7 +91,7 @@ export default function CsvImportModal({ onClose }: { onClose: () => void }) {
         <div className="flex flex-wrap gap-1 border-b border-warm-beige/30 px-5 pt-3">
           {(
             [
-              { value: "foodpanda-invoice", label: "Foodpanda orders + invoices" },
+              { value: "foodpanda-invoice", label: "Foodpanda orders / invoices" },
               { value: "foodpanda", label: "Foodpanda daily summary" },
               { value: "generic", label: "Orders CSV" },
             ] as const
@@ -379,27 +405,47 @@ interface OrderDetailRow {
   status: string;
   receivedAt: string;
   subtotal: number;
+  payoutAmount: number;
   itemsText: string;
 }
 
 interface InvoiceRow {
+  invoiceNumber: string;
+  invoiceDate: string;
   orderCode: string;
+  wastage: boolean;
+  deliveryMode: string | null;
   orderAmount: number;
-  payableAmount: number;
-  commission: number;
-  commissionRate: number;
   foodGst: number;
+  salesTaxCollection: number;
   incomeTaxWithholding: number;
   salesTaxWithholding: number;
+  alreadyReceivedAmount: number;
+  discountFundedByPlatform: number;
+  voucherFundedByPlatform: number;
+  discountPaidByRestaurant: number;
+  voucherPaidByRestaurant: number;
+  restaurantRevenue: number;
+  commissionBase: number;
+  commissionRate: number;
+  commission: number;
+  waitingTimeFee: number;
   sstOnCommission: number;
+  onlinePaymentFee: number;
+  payableAmount: number;
+  wastageRefundAmount: number;
+  packagingFeesPaidByCustomer: number;
 }
 
 interface FoodpandaInvoiceResult {
-  imported: number;
-  skippedDuplicate: number;
+  created: number;
+  updated: number;
+  estimated: number;
+  alreadyInvoiced: number;
   noInvoiceCount: number;
   noInvoice: string[];
   unmatchedDishes: string[];
+  invoicesProcessed: string[];
 }
 
 function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
@@ -414,25 +460,21 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState<FoodpandaInvoiceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function handleCsvFile(file: File) {
+  async function handleCsvFile(file: File) {
     setCsvFileName(file.name);
     setResult(null);
     setError(null);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => {
-        setOrderRows(
-          res.data.map((r) => ({
-            externalId: r["Order ID"],
-            status: r["Order status"],
-            receivedAt: r["Order received at"],
-            subtotal: parseMoney(r["Subtotal"]),
-            itemsText: r["Order Items"] ?? "",
-          }))
-        );
-      },
-    });
+    const rows = await parseOrderDetailsFile(file);
+    setOrderRows(
+      rows.map((r) => ({
+        externalId: String(r["Order ID"]),
+        status: String(r["Order status"]),
+        receivedAt: r["Order received at"] instanceof Date ? r["Order received at"].toISOString() : String(r["Order received at"]),
+        subtotal: parseMoney(r["Subtotal"] as string | number | undefined),
+        payoutAmount: parseMoney(r["Payout Amount"] as string | number | undefined),
+        itemsText: String(r["Order Items"] ?? ""),
+      }))
+    );
   }
 
   async function handleInvoiceFiles(files: FileList) {
@@ -443,20 +485,36 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
     for (const file of Array.from(files)) {
       names.push(file.name);
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, number | string>>(sheet);
+      const rows = XLSX.utils.sheet_to_json<Record<string, number | string | boolean | Date>>(sheet);
       for (const r of rows) {
         allRows.push({
+          invoiceNumber: String(r["Invoice Number"]),
+          invoiceDate: r["Invoice Date"] instanceof Date ? r["Invoice Date"].toISOString() : String(r["Invoice Date"]),
           orderCode: String(r["Order Code"]),
+          wastage: String(r["Wastage"]).trim().toUpperCase() === "Y",
+          deliveryMode: r["Delivery Mode"] != null ? String(r["Delivery Mode"]) : null,
           orderAmount: Number(r["Order Amount"]) || 0,
-          payableAmount: Number(r["Payable Amount"]) || 0,
-          commission: Number(r["foodpanda Commission"]) || 0,
-          commissionRate: Number(r["foodpanda Commission Rate"]) || 0,
           foodGst: Number(r["Food GST"]) || 0,
+          salesTaxCollection: Number(r["Sales Tax Collection"]) || 0,
           incomeTaxWithholding: Number(r["Income Tax Withholding"]) || 0,
           salesTaxWithholding: Number(r["Sales Tax Withholding"]) || 0,
+          alreadyReceivedAmount: Number(r["Already Received Amount"]) || 0,
+          discountFundedByPlatform: Number(r["Discount funded by Platform"]) || 0,
+          voucherFundedByPlatform: Number(r["Voucher funded by Platform"]) || 0,
+          discountPaidByRestaurant: Number(r["Discount Paid By Restaurant"]) || 0,
+          voucherPaidByRestaurant: Number(r["Voucher Paid By Restaurant"]) || 0,
+          restaurantRevenue: Number(r["Restaurant Revenue"]) || 0,
+          commissionBase: Number(r["foodpanda Commission Base"]) || 0,
+          commissionRate: Number(r["foodpanda Commission Rate"]) || 0,
+          commission: Number(r["foodpanda Commission"]) || 0,
+          waitingTimeFee: Number(r["Waiting Time Fee"]) || 0,
           sstOnCommission: Number(r["SST on foodpanda commission"]) || 0,
+          onlinePaymentFee: Number(r["Online Payment"]) || 0,
+          payableAmount: Number(r["Payable Amount"]) || 0,
+          wastageRefundAmount: Number(r["Wastage Refund Amount"]) || 0,
+          packagingFeesPaidByCustomer: Number(r["Packaging Fees Paid By Customer"]) || 0,
         });
       }
     }
@@ -480,7 +538,7 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
       return;
     }
     setResult(data);
-    if (data.imported > 0) {
+    if (data.created + data.updated > 0) {
       await mutate((key) => typeof key === "string" && key.startsWith("/api/orders"));
       await mutate((key) => typeof key === "string" && key.startsWith("/api/analytics"));
     }
@@ -490,17 +548,19 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
         <p className="text-sm text-charcoal/60">
-          The most accurate import — real per-order items plus the exact commission and tax figures from your
-          Foodpanda invoices. Orders are matched between the two files by Order Code, and re-importing the same
-          order is automatically skipped.
+          Upload your order-details file any time — nightly is fine. Each order&apos;s cost of Foodpanda is
+          estimated from its Payout Amount (subtotal minus payout), which matched the real invoices to the paisa
+          in testing. When the weekly invoice arrives, add it here too: those orders are refreshed with the exact
+          commission/tax breakdown and grouped for payout reconciliation. Re-uploading is always safe — orders are
+          matched by Order Code, and orders already tied to an invoice are never overwritten with estimates.
         </p>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-charcoal/50">Order details CSV (required)</p>
+          <p className="mb-1 text-xs font-medium text-charcoal/50">Order details file (required)</p>
           <input
             ref={csvInputRef}
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleCsvFile(e.target.files[0])}
           />
@@ -509,13 +569,13 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
             className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-4 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
           >
             <Upload size={16} />
-            {csvFileName || "Choose orderDetails.csv"}
+            {csvFileName || "Choose orderDetails.csv or .xlsx"}
           </button>
         </div>
 
         <div>
           <p className="mb-1 text-xs font-medium text-charcoal/50">
-            Invoice files (required — select all that cover your date range; you can add more than one)
+            Invoice files (optional — add once Foodpanda issues the weekly invoice; you can add more than one)
           </p>
           <input
             ref={invoiceInputRef}
@@ -537,10 +597,12 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        {orderRows && invoiceRows.length > 0 && !result && (
+        {orderRows && !result && (
           <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">
-            {orderRows.length} order(s) from the CSV, {invoiceRows.length} invoice line(s) loaded. Orders without a
-            matching invoice line won&apos;t be imported yet — upload the invoice that covers them later.
+            {orderRows.length} order(s) loaded
+            {invoiceRows.length > 0
+              ? `, ${invoiceRows.length} invoice line(s) loaded. Orders not on an invoice yet will use estimated earnings.`
+              : ". No invoice added — all orders will use estimated earnings from the Payout Amount column."}
           </div>
         )}
 
@@ -549,9 +611,9 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
         {result && (
           <div className="space-y-2">
             <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">
-              Imported {result.imported} order(s).
-              {result.skippedDuplicate > 0 && ` ${result.skippedDuplicate} already imported, skipped.`}
-              {result.noInvoiceCount > 0 && ` ${result.noInvoiceCount} order(s) have no matching invoice yet.`}
+              {result.created} new order(s) added, {result.updated} existing order(s) refreshed.
+              {result.noInvoiceCount > 0 && ` ${result.noInvoiceCount} use estimated earnings (no invoice yet).`}
+              {result.alreadyInvoiced > 0 && ` ${result.alreadyInvoiced} already have exact invoice figures and were left untouched.`}
             </div>
             {result.unmatchedDishes.length > 0 && (
               <div className="rounded-lg bg-warm-beige/20 p-3 text-xs text-charcoal/60">
@@ -573,7 +635,7 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
         {!result && (
           <button
             onClick={handleImport}
-            disabled={!orderRows || invoiceRows.length === 0 || importing}
+            disabled={!orderRows || importing}
             className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {importing ? "Importing…" : "Import orders"}

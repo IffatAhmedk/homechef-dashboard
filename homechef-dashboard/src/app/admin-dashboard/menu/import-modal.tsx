@@ -2,22 +2,62 @@
 
 import { useRef, useState } from "react";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { mutate } from "swr";
 import { X, Upload, Download } from "lucide-react";
 
 type Mode = "items" | "recipes";
 
-const ITEMS_TEMPLATE = `category,name,description,price,cost_price,stock_qty,available
-Rotis & Breads,Plain Paratha,Fresh whole wheat paratha,120,50,50,yes
-Sweets,Doodh Patti,Traditional milk tea,150,40,50,yes
-`;
+const ITEMS_HEADERS = ["category", "name", "description", "price", "cost_price", "stock_qty", "available"];
+const ITEMS_EXAMPLE_ROWS = [
+  ["Rotis & Breads", "Plain Paratha", "Fresh whole wheat paratha", 120, 50, 50, "yes"],
+  ["Sweets", "Doodh Patti", "Traditional milk tea", 150, 40, 50, "yes"],
+];
 
-const RECIPES_TEMPLATE = `menu_item,component_type,component_name,quantity
-Plain Paratha,ingredient,Flour,150
-Plain Paratha,ingredient,Cooking Oil,20
-Combo 1,item,Plain Paratha,1
-Combo 1,item,Doodh Patti,1
-`;
+const RECIPES_HEADERS = ["menu_item", "component_type", "component_name", "quantity"];
+const RECIPES_EXAMPLE_ROWS = [
+  ["Plain Paratha", "ingredient", "Flour", 150],
+  ["Plain Paratha", "ingredient", "Cooking Oil", 20],
+  ["Combo 1", "item", "Plain Paratha", 1],
+  ["Combo 1", "item", "Doodh Patti", 1],
+];
+
+function downloadCsv(headers: string[], rows: (string | number)[][], filename: string) {
+  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n") + "\n";
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadXlsx(headers: string[], rows: (string | number)[][], sheetName: string, filename: string) {
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  worksheet["!cols"] = headers.map((h) => ({ wch: Math.max(h.length + 2, 14) }));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.writeFile(workbook, filename);
+}
+
+/** Parses a .csv or .xlsx file into an array of row objects keyed by header. */
+async function parseFile(file: File): Promise<Record<string, string | number>[]> {
+  const isExcel = /\.xlsx?$/i.test(file.name);
+  if (isExcel) {
+    const buf = await file.arrayBuffer();
+    const workbook = XLSX.read(buf, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    return XLSX.utils.sheet_to_json<Record<string, string | number>>(sheet);
+  }
+  return new Promise((resolve) => {
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (res) => resolve(res.data),
+    });
+  });
+}
 
 interface ImportResult {
   created: number;
@@ -66,19 +106,15 @@ export default function MenuImportModal({ onClose }: { onClose: () => void }) {
 
 function ItemsImport({ onClose }: { onClose: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [rows, setRows] = useState<Record<string, string>[] | null>(null);
+  const [rows, setRows] = useState<Record<string, string | number>[] | null>(null);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
-  function handleFile(file: File) {
+  async function handleFile(file: File) {
     setFileName(file.name);
     setResult(null);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => setRows(res.data),
-    });
+    setRows(await parseFile(file));
   }
 
   async function handleImport() {
@@ -98,16 +134,6 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
     }
   }
 
-  function downloadTemplate() {
-    const blob = new Blob([ITEMS_TEMPLATE], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "menu-items-import-template.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
@@ -115,15 +141,26 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
           Existing items (matched by name) get updated; new ones are added, and new categories are created
           automatically. Cost price is skipped for items that already have a recipe — that stays recipe-driven.
         </p>
-        <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-sm text-terracotta hover:underline">
-          <Download size={14} /> Download CSV template
-        </button>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <button
+            onClick={() => downloadXlsx(ITEMS_HEADERS, ITEMS_EXAMPLE_ROWS, "Menu items", "menu-items-template.xlsx")}
+            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+          >
+            <Download size={14} /> Download Excel template
+          </button>
+          <button
+            onClick={() => downloadCsv(ITEMS_HEADERS, ITEMS_EXAMPLE_ROWS, "menu-items-template.csv")}
+            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+          >
+            <Download size={14} /> Download CSV template
+          </button>
+        </div>
 
         <div>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           />
@@ -132,7 +169,7 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
             className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-6 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
           >
             <Upload size={16} />
-            {fileName || "Choose a CSV file"}
+            {fileName || "Choose a CSV or Excel file"}
           </button>
         </div>
 
@@ -178,19 +215,15 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
 
 function RecipesImport({ onClose }: { onClose: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [rows, setRows] = useState<Record<string, string>[] | null>(null);
+  const [rows, setRows] = useState<Record<string, string | number>[] | null>(null);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
-  function handleFile(file: File) {
+  async function handleFile(file: File) {
     setFileName(file.name);
     setResult(null);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => setRows(res.data),
-    });
+    setRows(await parseFile(file));
   }
 
   async function handleImport() {
@@ -209,16 +242,6 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
     }
   }
 
-  function downloadTemplate() {
-    const blob = new Blob([RECIPES_TEMPLATE], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "recipes-import-template.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
@@ -228,15 +251,26 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
           other menu items). Both the menu item and its components must already exist — import ingredients and menu
           items first.
         </p>
-        <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-sm text-terracotta hover:underline">
-          <Download size={14} /> Download CSV template
-        </button>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <button
+            onClick={() => downloadXlsx(RECIPES_HEADERS, RECIPES_EXAMPLE_ROWS, "Recipes", "recipes-template.xlsx")}
+            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+          >
+            <Download size={14} /> Download Excel template
+          </button>
+          <button
+            onClick={() => downloadCsv(RECIPES_HEADERS, RECIPES_EXAMPLE_ROWS, "recipes-template.csv")}
+            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+          >
+            <Download size={14} /> Download CSV template
+          </button>
+        </div>
 
         <div>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           />
@@ -245,7 +279,7 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
             className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-6 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
           >
             <Upload size={16} />
-            {fileName || "Choose a CSV file"}
+            {fileName || "Choose a CSV or Excel file"}
           </button>
         </div>
 

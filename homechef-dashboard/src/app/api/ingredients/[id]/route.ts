@@ -4,7 +4,7 @@ import { recomputeItemsUsingIngredient } from "@/lib/recipe-cost";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, unit, costPerUnit } = await req.json();
+  const { name, unit, costPerUnit, category } = await req.json();
 
   const ingredient = await prisma.ingredient.update({
     where: { id },
@@ -12,10 +12,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(name !== undefined && { name }),
       ...(unit !== undefined && { unit }),
       ...(costPerUnit !== undefined && { costPerUnit: Number(costPerUnit) }),
+      ...(category !== undefined && { category }),
     },
   });
 
-  if (costPerUnit !== undefined) {
+  if (costPerUnit !== undefined || category !== undefined) {
     await recomputeItemsUsingIngredient(id);
   }
 

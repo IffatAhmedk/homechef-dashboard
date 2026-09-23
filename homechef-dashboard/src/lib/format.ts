@@ -48,3 +48,31 @@ export const STATUS_COLORS: Record<string, string> = {
   DELIVERED: "bg-sage/20 text-sage border-sage/30",
   CANCELLED: "bg-maroon/10 text-maroon border-maroon/20",
 };
+
+export const EXPENSE_CATEGORIES = [
+  "INGREDIENTS",
+  "PACKAGING",
+  "FOODPANDA_SUBSCRIPTION",
+  "ADVERTISING",
+  "ONBOARDING",
+  "UTILITIES",
+  "LABOUR",
+  "WASTAGE_SPOILAGE",
+  "BRANDING_PRINTING",
+  "STARTUP_INVESTMENT",
+  "OTHER",
+] as const;
+
+export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
+  INGREDIENTS: "Ingredients",
+  PACKAGING: "Packaging",
+  FOODPANDA_SUBSCRIPTION: "Foodpanda subscription",
+  ADVERTISING: "Advertising / CPC",
+  ONBOARDING: "Onboarding",
+  UTILITIES: "Gas & electricity",
+  LABOUR: "Worker payments",
+  WASTAGE_SPOILAGE: "Refunds, wastage & spoilage",
+  BRANDING_PRINTING: "Branding & printing",
+  STARTUP_INVESTMENT: "Startup investment",
+  OTHER: "Other",
+};

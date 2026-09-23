@@ -22,6 +22,25 @@ enum OrderChannel {
   FOODPANDA
 }
 
+enum IngredientCategory {
+  FOOD
+  PACKAGING
+}
+
+enum ExpenseCategory {
+  INGREDIENTS
+  PACKAGING
+  FOODPANDA_SUBSCRIPTION
+  ADVERTISING
+  ONBOARDING
+  UTILITIES
+  LABOUR
+  WASTAGE_SPOILAGE
+  BRANDING_PRINTING
+  STARTUP_INVESTMENT
+  OTHER
+}
+
 model Customer {
   id        String   @id @default(cuid())
   name      String
@@ -39,31 +58,40 @@ model Category {
 }
 
 model MenuItem {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  price       Float
-  costPrice   Float       @default(0)
-  imageUrl    String?
-  isAvailable Boolean     @default(true)
-  stockQty    Int         @default(0)
-  categoryId  String
-  category    Category    @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
-  recipeLines       RecipeLine[] @relation("ItemRecipe")
-  usedAsComponentIn RecipeLine[] @relation("ComboComponent")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                 String       @id @default(cuid())
+  name               String
+  description        String?
+  price              Float
+  costPrice          Float        @default(0)
+  /// How many servings one batch of this recipe's ingredient quantities makes.
+  /// Ingredient quantities on the recipe are for the WHOLE batch; cost per
+  /// serving = batch cost / batchYield. Default 1 means quantities are
+  /// already per-serving (unchanged behaviour for existing recipes).
+  batchYield         Int          @default(1)
+  /// The packaging-only slice of costPrice (from PACKAGING-category ingredient lines),
+  /// kept separate so "ingredient cost" and "packaging cost" can be reported individually.
+  packagingCostPrice Float        @default(0)
+  imageUrl           String?
+  isAvailable        Boolean      @default(true)
+  stockQty           Int          @default(0)
+  categoryId         String
+  category           Category     @relation(fields: [categoryId], references: [id])
+  orderItems         OrderItem[]
+  recipeLines        RecipeLine[] @relation("ItemRecipe")
+  usedAsComponentIn  RecipeLine[] @relation("ComboComponent")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 }
 
 model Ingredient {
-  id          String       @id @default(cuid())
-  name        String       @unique
+  id          String             @id @default(cuid())
+  name        String             @unique
   unit        String
   costPerUnit Float
+  category    IngredientCategory @default(FOOD)
   recipeLines RecipeLine[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
 model RecipeLine {
@@ -77,6 +105,24 @@ model RecipeLine {
   quantity        Float
 }
 
+/// One row per Foodpanda weekly invoice (Appendix A workbook). Orders are
+/// linked to the invoice that paid them out, for expected-vs-actual
+/// reconciliation against the bank statement.
+model Invoice {
+  id                String    @id @default(cuid())
+  invoiceNumber     String    @unique
+  invoiceDate       DateTime
+  foodpandaPayout   Float
+  actualBankDeposit Float?
+  paymentDate       DateTime?
+  pendingAmount     Float?
+  disputedAmount    Float?
+  notes             String?
+  orders            Order[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
 model Order {
   id                  String       @id @default(cuid())
   customerId          String
@@ -85,31 +131,65 @@ model Order {
   status              OrderStatus  @default(PENDING)
   deliveryAddress     String
   notes               String?
+  /// Final amount the customer pays: items subtotal - discount + deliveryCharge + tip.
   totalAmount         Float
+  discount            Float        @default(0)
+  deliveryCharge      Float        @default(0)
+  tip                 Float        @default(0)
   costOverride        Float?
+  /// Total of everything Foodpanda deducts (commission + taxes + fees). Kept for
+  /// orders imported without the granular invoice fields below; when those are
+  /// present, the granular figures are authoritative and this is their sum.
   platformCutOverride Float?
   externalId          String?      @unique
-  items               OrderItem[]
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+
+  // -- Foodpanda invoice detail (Appendix A), one-to-one with the order --
+  invoiceId                   String?
+  invoice                     Invoice? @relation(fields: [invoiceId], references: [id])
+  wastage                     Boolean  @default(false)
+  deliveryMode                String?
+  foodGst                     Float?
+  salesTaxCollection          Float?
+  incomeTaxWithholding        Float?
+  salesTaxWithholding         Float?
+  alreadyReceivedAmount       Float?
+  discountFundedByPlatform    Float?
+  voucherFundedByPlatform     Float?
+  discountPaidByRestaurant    Float?
+  voucherPaidByRestaurant     Float?
+  restaurantRevenue           Float?
+  commissionBase              Float?
+  commissionRate              Float?
+  commission                  Float?
+  waitingTimeFee              Float?
+  sstOnCommission             Float?
+  onlinePaymentFee            Float?
+  payableAmount               Float?
+  wastageRefundAmount         Float?
+  packagingFeesPaidByCustomer Float?
+
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItemId  String
-  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity    Int
-  priceAtSale Float
-  costAtSale  Float    @default(0)
+  id                  String   @id @default(cuid())
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId          String
+  menuItem            MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity            Int
+  priceAtSale         Float
+  costAtSale          Float    @default(0)
+  packagingCostAtSale Float    @default(0)
 }
 
 model Expense {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   description String
   amount      Float
-  category    String?
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
+  category    ExpenseCategory @default(OTHER)
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
 }

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     data: {
       description,
       amount: Number(amount),
-      category: category || null,
+      ...(category && { category }),
       date: date ? new Date(date) : new Date(),
     },
   });

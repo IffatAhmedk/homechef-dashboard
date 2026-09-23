@@ -7,13 +7,18 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, unit, costPerUnit } = await req.json();
+  const { name, unit, costPerUnit, category } = await req.json();
   if (!name || !unit || costPerUnit == null) {
     return NextResponse.json({ error: "name, unit and costPerUnit are required" }, { status: 400 });
   }
 
   const ingredient = await prisma.ingredient.create({
-    data: { name, unit, costPerUnit: Number(costPerUnit) },
+    data: {
+      name,
+      unit,
+      costPerUnit: Number(costPerUnit),
+      ...(category && { category }),
+    },
   });
 
   return NextResponse.json(ingredient, { status: 201 });

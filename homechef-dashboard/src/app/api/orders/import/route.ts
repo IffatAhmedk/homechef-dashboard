@@ -65,7 +65,13 @@ export async function POST(req: NextRequest) {
         throw new Error(`Invalid date "${first.date}"`);
       }
 
-      const itemsData: { menuItemId: string; quantity: number; priceAtSale: number; costAtSale: number }[] = [];
+      const itemsData: {
+        menuItemId: string;
+        quantity: number;
+        priceAtSale: number;
+        costAtSale: number;
+        packagingCostAtSale: number;
+      }[] = [];
       let total = 0;
 
       for (const row of groupRows) {
@@ -83,6 +89,7 @@ export async function POST(req: NextRequest) {
           quantity,
           priceAtSale,
           costAtSale: menuItem.costPrice,
+          packagingCostAtSale: menuItem.packagingCostPrice,
         });
       }
 

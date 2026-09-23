@@ -95,14 +95,14 @@ async function main() {
 
   const expenses = await Promise.all(
     [
-      { description: "Weekly vegetable & grocery haul", amount: 4200, category: "Ingredients", daysAgo: 1 },
-      { description: "LPG cylinder refill", amount: 1100, category: "Utilities", daysAgo: 3 },
-      { description: "Takeaway containers & bags", amount: 1850, category: "Packaging", daysAgo: 5 },
-      { description: "Kitchen staff wages (weekly)", amount: 6000, category: "Staff", daysAgo: 7 },
-      { description: "Spice & masala restock", amount: 2300, category: "Ingredients", daysAgo: 9 },
-      { description: "Delivery bike fuel", amount: 900, category: "Delivery", daysAgo: 12 },
-      { description: "Kitchen staff wages (weekly)", amount: 6000, category: "Staff", daysAgo: 14 },
-      { description: "Rice & atta bulk purchase", amount: 3600, category: "Ingredients", daysAgo: 18 },
+      { description: "Weekly vegetable & grocery haul", amount: 4200, category: "INGREDIENTS" as const, daysAgo: 1 },
+      { description: "LPG cylinder refill", amount: 1100, category: "UTILITIES" as const, daysAgo: 3 },
+      { description: "Takeaway containers & bags", amount: 1850, category: "PACKAGING" as const, daysAgo: 5 },
+      { description: "Kitchen staff wages (weekly)", amount: 6000, category: "LABOUR" as const, daysAgo: 7 },
+      { description: "Spice & masala restock", amount: 2300, category: "INGREDIENTS" as const, daysAgo: 9 },
+      { description: "Delivery bike fuel", amount: 900, category: "OTHER" as const, daysAgo: 12 },
+      { description: "Kitchen staff wages (weekly)", amount: 6000, category: "LABOUR" as const, daysAgo: 14 },
+      { description: "Rice & atta bulk purchase", amount: 3600, category: "INGREDIENTS" as const, daysAgo: 18 },
     ].map(({ daysAgo, ...e }) =>
       prisma.expense.create({ data: { ...e, date: new Date(now - daysAgo * dayMs) } })
     )

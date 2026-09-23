@@ -4,6 +4,7 @@ interface FinancialItem {
   quantity: number;
   priceAtSale: number;
   costAtSale: number;
+  packagingCostAtSale?: number;
 }
 
 export function itemFinancials(
@@ -13,9 +14,11 @@ export function itemFinancials(
 ) {
   const revenue = item.priceAtSale * item.quantity;
   const cost = item.costAtSale * item.quantity;
+  const packagingCost = (item.packagingCostAtSale ?? 0) * item.quantity;
+  const ingredientCost = cost - packagingCost;
   const platformCut = channel === "FOODPANDA" ? revenue * cutRate : 0;
   const profit = revenue - cost - platformCut;
-  return { revenue, cost, platformCut, profit };
+  return { revenue, cost, ingredientCost, packagingCost, platformCut, profit };
 }
 
 interface FinancialOrder {
@@ -30,6 +33,11 @@ export function orderFinancials(order: FinancialOrder) {
   const revenue = order.totalAmount;
   const cost =
     order.costOverride != null ? order.costOverride : order.items.reduce((sum, i) => sum + i.costAtSale * i.quantity, 0);
+  const packagingCost =
+    order.costOverride != null
+      ? 0
+      : order.items.reduce((sum, i) => sum + (i.packagingCostAtSale ?? 0) * i.quantity, 0);
+  const ingredientCost = cost - packagingCost;
   const platformCut =
     order.channel === "FOODPANDA"
       ? order.platformCutOverride != null
@@ -40,5 +48,5 @@ export function orderFinancials(order: FinancialOrder) {
   // The rate that reproduces this order's actual platformCut — use this for per-item cut lines so they
   // sum back to the order total exactly, whether the cut is the flat estimate or an exact imported figure.
   const effectiveCutRate = revenue > 0 ? platformCut / revenue : FOODPANDA_COMMISSION_RATE;
-  return { revenue, cost, platformCut, profit, effectiveCutRate };
+  return { revenue, cost, ingredientCost, packagingCost, platformCut, profit, effectiveCutRate };
 }

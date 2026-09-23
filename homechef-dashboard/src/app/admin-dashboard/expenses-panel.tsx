@@ -4,13 +4,13 @@ import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { Plus, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, EXPENSE_CATEGORIES, EXPENSE_CATEGORY_LABELS } from "@/lib/format";
 
 interface Expense {
   id: string;
   description: string;
   amount: number;
-  category: string | null;
+  category: string;
   date: string;
 }
 
@@ -18,7 +18,7 @@ export default function ExpensesPanel({ from, to }: { from: string; to: string }
   const key = `/api/expenses?from=${from}&to=${to}`;
   const { data: expenses = [] } = useSWR<Expense[]>(key, fetcher);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ description: "", amount: "", category: "" });
+  const [form, setForm] = useState({ description: "", amount: "", category: "OTHER" });
   const [saving, setSaving] = useState(false);
 
   async function handleAdd(e: React.FormEvent) {
@@ -30,12 +30,12 @@ export default function ExpensesPanel({ from, to }: { from: string; to: string }
       body: JSON.stringify({
         description: form.description,
         amount: Number(form.amount),
-        category: form.category || undefined,
+        category: form.category,
       }),
     });
     if (res.ok) {
       await mutate(key);
-      setForm({ description: "", amount: "", category: "" });
+      setForm({ description: "", amount: "", category: "OTHER" });
       setShowAdd(false);
     }
     setSaving(false);
@@ -77,12 +77,17 @@ export default function ExpensesPanel({ from, to }: { from: string; to: string }
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               className="w-1/2 rounded-md border border-warm-beige/60 px-2 py-1.5 text-sm"
             />
-            <input
-              placeholder="Category (optional)"
+            <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-1/2 rounded-md border border-warm-beige/60 px-2 py-1.5 text-sm"
-            />
+            >
+              {EXPENSE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {EXPENSE_CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             type="submit"
@@ -101,8 +106,7 @@ export default function ExpensesPanel({ from, to }: { from: string; to: string }
             <div className="min-w-0">
               <p className="truncate text-charcoal/80">{e.description}</p>
               <p className="text-xs text-charcoal/40">
-                {formatDate(e.date)}
-                {e.category ? ` · ${e.category}` : ""}
+                {formatDate(e.date)} · {EXPENSE_CATEGORY_LABELS[e.category] ?? e.category}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">

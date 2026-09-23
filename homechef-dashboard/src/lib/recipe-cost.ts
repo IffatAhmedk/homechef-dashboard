@@ -10,21 +10,40 @@ export async function recomputeItemCost(menuItemId: string, visited: Set<string>
   if (visited.has(menuItemId)) return;
   visited.add(menuItemId);
 
-  const lines = await prisma.recipeLine.findMany({
-    where: { menuItemId },
-    include: { ingredient: true, componentItem: true },
-  });
+  const [lines, menuItem] = await Promise.all([
+    prisma.recipeLine.findMany({
+      where: { menuItemId },
+      include: { ingredient: true, componentItem: true },
+    }),
+    prisma.menuItem.findUnique({ where: { id: menuItemId }, select: { batchYield: true } }),
+  ]);
 
   if (lines.length === 0) return;
 
-  const cost = lines.reduce((sum, line) => {
-    const unitCost = line.ingredient?.costPerUnit ?? line.componentItem?.costPrice ?? 0;
-    return sum + line.quantity * unitCost;
-  }, 0);
+  let batchCost = 0;
+  let batchPackagingCost = 0;
+
+  for (const line of lines) {
+    if (line.ingredient) {
+      const lineCost = line.quantity * line.ingredient.costPerUnit;
+      batchCost += lineCost;
+      if (line.ingredient.category === "PACKAGING") batchPackagingCost += lineCost;
+    } else if (line.componentItem) {
+      batchCost += line.quantity * line.componentItem.costPrice;
+      batchPackagingCost += line.quantity * line.componentItem.packagingCostPrice;
+    }
+  }
+
+  const batchYield = menuItem?.batchYield && menuItem.batchYield > 0 ? menuItem.batchYield : 1;
+  const cost = batchCost / batchYield;
+  const packagingCost = batchPackagingCost / batchYield;
 
   await prisma.menuItem.update({
     where: { id: menuItemId },
-    data: { costPrice: Math.round(cost * 100) / 100 },
+    data: {
+      costPrice: Math.round(cost * 100) / 100,
+      packagingCostPrice: Math.round(packagingCost * 100) / 100,
+    },
   });
 
   const dependents = await prisma.recipeLine.findMany({

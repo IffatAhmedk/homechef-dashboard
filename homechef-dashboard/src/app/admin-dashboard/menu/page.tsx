@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import useSWR, { mutate } from "swr";
-import { Plus, Trash2, Save, Printer, ChefHat, Upload } from "lucide-react";
+import { Plus, Trash2, Save, Printer, ChefHat, Upload, Pencil } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import RecipeModal from "./recipe-modal";
 import MenuImportModal from "./import-modal";
+import EditItemModal from "./edit-item-modal";
 
 interface Category {
   id: string;
@@ -19,6 +20,7 @@ interface MenuItem {
   description: string | null;
   price: number;
   costPrice: number;
+  batchYield: number;
   stockQty: number;
   isAvailable: boolean;
   categoryId: string;
@@ -33,6 +35,7 @@ export default function AdminMenuPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [recipeItem, setRecipeItem] = useState<MenuItem | null>(null);
+  const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [showImport, setShowImport] = useState(false);
 
   const [newItem, setNewItem] = useState({ name: "", description: "", price: "", costPrice: "", stockQty: "", categoryName: "" });
@@ -300,6 +303,13 @@ export default function AdminMenuPage() {
                             </button>
                           )}
                           <button
+                            onClick={() => setEditItem(item)}
+                            title="Edit item"
+                            className="rounded-lg p-1.5 text-charcoal/40 hover:bg-terracotta/10 hover:text-terracotta"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
                             onClick={() => setRecipeItem(item)}
                             title="Edit recipe"
                             className="rounded-lg p-1.5 text-charcoal/40 hover:bg-terracotta/10 hover:text-terracotta"
@@ -332,6 +342,7 @@ export default function AdminMenuPage() {
         />
       )}
       {showImport && <MenuImportModal onClose={() => setShowImport(false)} />}
+      {editItem && <EditItemModal item={editItem} onClose={() => setEditItem(null)} />}
     </div>
   );
 }

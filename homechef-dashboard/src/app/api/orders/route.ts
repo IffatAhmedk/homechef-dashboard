@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveCustomer } from "@/lib/customer";
 
 export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status");
@@ -35,7 +36,8 @@ const VALID_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY",
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, phone, address, notes, items, channel, status, createdAt } = body as {
+  const { customerId, name, phone, address, notes, items, channel, status, createdAt, discount, deliveryCharge, tip } = body as {
+    customerId?: string;
     name: string;
     phone?: string;
     address?: string;
@@ -44,6 +46,9 @@ export async function POST(req: NextRequest) {
     channel?: "DIRECT" | "FOODPANDA";
     status?: string;
     createdAt?: string;
+    discount?: number;
+    deliveryCharge?: number;
+    tip?: number;
   };
 
   if (!name) {
@@ -54,6 +59,13 @@ export async function POST(req: NextRequest) {
   }
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  const discountAmount = Number(discount) || 0;
+  const deliveryChargeAmount = Number(deliveryCharge) || 0;
+  const tipAmount = Number(tip) || 0;
+  if (discountAmount < 0 || deliveryChargeAmount < 0 || tipAmount < 0) {
+    return NextResponse.json({ error: "Discount, delivery charge and tip can't be negative" }, { status: 400 });
   }
 
   const orderDate = createdAt ? new Date(createdAt) : new Date();
@@ -82,17 +94,14 @@ export async function POST(req: NextRequest) {
           quantity: line.quantity,
           priceAtSale,
           costAtSale: menuItem.costPrice,
+          packagingCostAtSale: menuItem.packagingCostPrice,
         };
       });
 
-      const resolvedPhone = phone?.trim() || `manual-${Date.now()}`;
-      const resolvedAddress = address?.trim() || "";
+      if (discountAmount > total) throw new Error("Discount can't exceed the items subtotal");
 
-      const customer = await tx.customer.upsert({
-        where: { phone: resolvedPhone },
-        update: { name, ...(resolvedAddress && { address: resolvedAddress }) },
-        create: { name, phone: resolvedPhone, address: resolvedAddress || null },
-      });
+      const resolvedAddress = address?.trim() || "";
+      const customer = await resolveCustomer(tx, { customerId, name, phone, address });
 
       for (const line of items) {
         await tx.menuItem.update({
@@ -108,7 +117,10 @@ export async function POST(req: NextRequest) {
           status: (status as never) ?? "PENDING",
           deliveryAddress: resolvedAddress,
           notes: notes ?? null,
-          totalAmount: total,
+          totalAmount: total - discountAmount + deliveryChargeAmount + tipAmount,
+          discount: discountAmount,
+          deliveryCharge: deliveryChargeAmount,
+          tip: tipAmount,
           createdAt: orderDate,
           updatedAt: orderDate,
           items: { create: orderItemsData },

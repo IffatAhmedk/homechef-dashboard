@@ -6,6 +6,11 @@ interface ImportRow {
   name: string;
   unit: string;
   cost_per_unit: string | number;
+  category?: string;
+}
+
+function normalizeCategory(raw: string | undefined): "FOOD" | "PACKAGING" {
+  return raw && /^pack/i.test(raw.trim()) ? "PACKAGING" : "FOOD";
 }
 
 export async function POST(req: NextRequest) {
@@ -32,14 +37,15 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    const category = normalizeCategory(row.category);
     const existing = allIngredients.find((i) => i.name.toLowerCase() === name.toLowerCase());
 
     if (existing) {
-      await prisma.ingredient.update({ where: { id: existing.id }, data: { unit, costPerUnit } });
+      await prisma.ingredient.update({ where: { id: existing.id }, data: { unit, costPerUnit, category } });
       await recomputeItemsUsingIngredient(existing.id);
       updated++;
     } else {
-      const newIngredient = await prisma.ingredient.create({ data: { name, unit, costPerUnit } });
+      const newIngredient = await prisma.ingredient.create({ data: { name, unit, costPerUnit, category } });
       allIngredients.push(newIngredient);
       created++;
     }

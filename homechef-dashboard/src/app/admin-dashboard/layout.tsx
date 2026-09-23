@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, Wheat } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, Wheat, Receipt } from "lucide-react";
 
 const NAV = [
   { href: "/admin-dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/admin-dashboard/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin-dashboard/menu", label: "Menu & Inventory", icon: UtensilsCrossed },
   { href: "/admin-dashboard/ingredients", label: "Ingredients", icon: Wheat },
+  { href: "/admin-dashboard/invoices", label: "Payouts", icon: Receipt },
   { href: "/admin-dashboard/customers", label: "Customers", icon: Users },
 ];
 
