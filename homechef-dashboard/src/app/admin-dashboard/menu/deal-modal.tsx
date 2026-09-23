@@ -102,12 +102,12 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
-          <h2 className="text-lg font-semibold text-charcoal">Create menu deal</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="font-heading text-2xl text-ink">Create menu deal</h2>
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
@@ -118,13 +118,13 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
               placeholder="Deal name (e.g. Combo 1)"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="col-span-2 rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="col-span-2 rounded-sm border border-control px-3 py-2 text-sm"
             />
             <input
               placeholder="Description (optional)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="col-span-2 rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="col-span-2 rounded-sm border border-control px-3 py-2 text-sm"
             />
             <input
               required
@@ -132,7 +132,7 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
               placeholder="Category"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
-              className="rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="rounded-sm border border-control px-3 py-2 text-sm"
             />
             <datalist id="deal-category-options">
               {categories.map((c) => (
@@ -146,13 +146,13 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
               placeholder="Deal price"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="rounded-sm border border-control px-3 py-2 text-sm"
             />
           </div>
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <p className="text-xs font-medium text-charcoal/50">
+              <p className="text-xs font-bold text-ink-muted">
                 Items in this deal ({pickedCount} selected) — pick from any category
               </p>
             </div>
@@ -160,22 +160,22 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
               placeholder="Search items…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="mb-2 w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="mb-2 w-full rounded-sm border border-control px-3 py-2 text-sm"
             />
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-warm-beige/40">
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-line">
               {groups.map(({ category, items: catItems }) => (
                 <div key={category.id}>
-                  <p className="sticky top-0 bg-cream px-3 py-1 text-xs font-semibold text-charcoal/60">{category.name}</p>
+                  <p className="sticky top-0 bg-sunken px-3 py-1 text-xs font-bold text-ink-muted">{category.name}</p>
                   {catItems.map((item) => {
                     const on = item.id in picked;
                     return (
-                      <div key={item.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-cream/60">
-                        <label className="flex flex-1 cursor-pointer items-center gap-2 text-charcoal/80">
+                      <div key={item.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-sunken/60">
+                        <label className="flex flex-1 cursor-pointer items-center gap-2 text-ink-muted">
                           <input
                             type="checkbox"
                             checked={on}
                             onChange={() => toggle(item.id)}
-                            className="h-4 w-4 accent-terracotta"
+                            className="h-4 w-4 accent-brand"
                           />
                           {item.name}
                         </label>
@@ -186,7 +186,7 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
                             aria-label={`Quantity of ${item.name}`}
                             value={picked[item.id]}
                             onChange={(e) => setPicked((p) => ({ ...p, [item.id]: e.target.value }))}
-                            className="w-16 rounded border border-warm-beige/60 px-2 py-1 text-sm"
+                            className="w-16 rounded border border-control px-2 py-1 text-sm"
                           />
                         )}
                       </div>
@@ -194,39 +194,39 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
                   })}
                 </div>
               ))}
-              {groups.length === 0 && <p className="p-3 text-sm text-charcoal/40">No items match.</p>}
+              {groups.length === 0 && <p className="p-3 text-sm text-ink-muted">No items match.</p>}
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-charcoal/50">Cost price (optional)</label>
+            <label className="mb-1 block text-xs font-bold text-ink-muted">Cost price (optional)</label>
             <input
               type="number"
               min="0"
               value={costPrice}
               onChange={(e) => setCostPrice(e.target.value)}
-              className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-control px-3 py-2 text-sm"
             />
-            <p className="mt-1 text-xs text-charcoal/40">
+            <p className="mt-1 text-xs text-ink-muted">
               If every selected item has a cost, the deal&apos;s cost is calculated automatically and this is
               ignored. Only fill it in if some items don&apos;t have a cost yet.
             </p>
           </div>
 
-          <p className="text-xs text-charcoal/40">
+          <p className="text-xs text-ink-muted">
             Selling this deal takes stock from each item inside it — the deal has no stock of its own.
           </p>
 
-          {error && <p className="text-sm text-maroon">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
-          <div className="flex justify-end gap-2 border-t border-warm-beige/30 pt-3">
-            <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+          <div className="flex justify-end gap-2 border-t border-line pt-3">
+            <button type="button" onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
             >
               {saving ? "Creating…" : "Create deal"}
             </button>

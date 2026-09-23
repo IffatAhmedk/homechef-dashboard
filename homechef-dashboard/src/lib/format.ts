@@ -1,9 +1,11 @@
 export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-PK", {
+  const formatted = new Intl.NumberFormat("en-PK", {
     style: "currency",
     currency: "PKR",
     maximumFractionDigits: 0,
   }).format(amount);
+  // Real minus sign, as the design system asks for.
+  return formatted.replace(/^-/, "−");
 }
 
 export function formatDateTime(date: Date | string) {
@@ -41,12 +43,12 @@ export const STATUS_FLOW: string[] = [
 ];
 
 export const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-warm-beige/40 text-charcoal border-warm-beige",
-  CONFIRMED: "bg-terracotta/10 text-terracotta border-terracotta/20",
-  PREPARING: "bg-terracotta/20 text-terracotta border-terracotta/30",
-  OUT_FOR_DELIVERY: "bg-sage/10 text-sage border-sage/20",
-  DELIVERED: "bg-sage/20 text-sage border-sage/30",
-  CANCELLED: "bg-maroon/10 text-maroon border-maroon/20",
+  PENDING: "bg-warn-soft text-warn border-warn-soft",
+  CONFIRMED: "bg-stone-soft text-stone border-stone-soft",
+  PREPARING: "bg-brand-soft text-brand-deep border-brand-soft",
+  OUT_FOR_DELIVERY: "bg-stone-soft text-stone border-stone-soft",
+  DELIVERED: "bg-leaf-soft text-leaf border-leaf-soft",
+  CANCELLED: "bg-danger-soft text-danger border-danger-soft",
 };
 
 export const EXPENSE_CATEGORIES = [

@@ -28,43 +28,43 @@ export default function AdminCustomersPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-charcoal">Customers</h1>
-        <p className="text-sm text-charcoal/50">Everyone who has ordered from Rozana.</p>
+        <h1 className="font-heading text-3xl text-ink">Customers</h1>
+        <p className="text-sm text-ink-muted">Everyone who has ordered from Rozana.</p>
       </div>
 
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search by name or phone…"
-        className="w-full max-w-sm rounded-lg border border-warm-beige/60 px-3 py-2 text-sm focus:border-terracotta focus:outline-none"
+        className="w-full max-w-sm rounded-sm border border-control px-3 py-2 text-sm focus:border-brand focus:outline-none"
       />
 
-      <div className="overflow-x-auto rounded-xl border border-warm-beige/40 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-line bg-card">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-warm-beige/30 text-left text-xs uppercase text-charcoal/40">
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">Address</th>
-              <th className="px-4 py-3 font-medium">Orders</th>
-              <th className="px-4 py-3 font-medium">Total spent</th>
-              <th className="px-4 py-3 font-medium">Last order</th>
+            <tr className="border-b border-line text-left text-xs text-ink-muted">
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Phone</th>
+              <th className="px-4 py-3 font-bold">Address</th>
+              <th className="px-4 py-3 font-bold">Orders</th>
+              <th className="px-4 py-3 font-bold">Total spent</th>
+              <th className="px-4 py-3 font-bold">Last order</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-warm-beige/20">
+          <tbody className="divide-y divide-line">
             {filtered.map((c) => (
-              <tr key={c.id} className="hover:bg-cream">
-                <td className="px-4 py-3 font-medium text-charcoal">{c.name}</td>
-                <td className="px-4 py-3 text-charcoal/60">{c.phone}</td>
-                <td className="max-w-xs truncate px-4 py-3 text-charcoal/50">{c.address}</td>
-                <td className="px-4 py-3 text-charcoal/60">{c.orderCount}</td>
-                <td className="px-4 py-3 font-medium text-charcoal">{formatCurrency(c.totalSpent)}</td>
-                <td className="px-4 py-3 text-charcoal/50">{c.lastOrderAt ? formatDate(c.lastOrderAt) : "—"}</td>
+              <tr key={c.id} className="hover:bg-sunken">
+                <td className="px-4 py-3 font-bold text-ink">{c.name}</td>
+                <td className="px-4 py-3 text-ink-muted">{c.phone}</td>
+                <td className="max-w-xs truncate px-4 py-3 text-ink-muted">{c.address}</td>
+                <td className="px-4 py-3 text-ink-muted">{c.orderCount}</td>
+                <td className="px-4 py-3 font-bold text-ink">{formatCurrency(c.totalSpent)}</td>
+                <td className="px-4 py-3 text-ink-muted">{c.lastOrderAt ? formatDate(c.lastOrderAt) : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <p className="p-6 text-center text-sm text-charcoal/40">No customers found.</p>}
+        {filtered.length === 0 && <p className="p-6 text-center text-sm text-ink-muted">No customers found.</p>}
       </div>
     </div>
   );

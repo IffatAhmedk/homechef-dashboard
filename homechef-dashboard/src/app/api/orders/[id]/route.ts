@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveCustomer } from "@/lib/customer";
+import { syncOrderStock } from "@/lib/stock-ledger";
 import { assertStockCovers, applyStockDelta, baseRequirements } from "@/lib/stock";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,6 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!body.items) {
     if (!body.status) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     const order = await prisma.order.update({ where: { id }, data: { status: body.status as never }, include });
+    await syncOrderStock(prisma, id);
     return NextResponse.json(order);
   }
 
@@ -125,6 +127,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         include,
       });
     });
+    await syncOrderStock(prisma, id);
     return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to update order" }, { status: 400 });

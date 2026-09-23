@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ingredientStockLevels } from "@/lib/stock-ledger";
 
 export async function GET() {
-  const ingredients = await prisma.ingredient.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(ingredients);
+  const [ingredients, levels] = await Promise.all([
+    prisma.ingredient.findMany({ orderBy: { name: "asc" } }),
+    ingredientStockLevels(),
+  ]);
+  return NextResponse.json(
+    ingredients.map((i) => ({
+      ...i,
+      stockQty: levels.get(i.id)?.stockQty ?? 0,
+      tracked: levels.get(i.id)?.tracked ?? false,
+      avgDailyUse: levels.get(i.id)?.avgDailyUse ?? 0,
+      daysLeft: levels.get(i.id)?.daysLeft ?? null,
+    }))
+  );
 }
 
 export async function POST(req: NextRequest) {

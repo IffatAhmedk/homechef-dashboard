@@ -1,4 +1,4 @@
-export type RangePreset = "week" | "month" | "custom";
+export type RangePreset = "week" | "lastWeek" | "month" | "custom";
 
 export interface DateRange {
   from: Date;
@@ -21,6 +21,14 @@ export function rangeForPreset(preset: RangePreset, custom?: { from: string; to:
     const diffToMonday = (day + 6) % 7;
     const from = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday));
     return { from, to: endOfDay(now) };
+  }
+
+  if (preset === "lastWeek") {
+    const day = now.getDay();
+    const diffToMonday = (day + 6) % 7;
+    const from = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday - 7));
+    const to = endOfDay(new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6));
+    return { from, to };
   }
 
   if (preset === "month") {

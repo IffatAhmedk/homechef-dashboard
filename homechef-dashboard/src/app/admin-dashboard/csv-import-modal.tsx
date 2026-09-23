@@ -79,16 +79,16 @@ export default function CsvImportModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
-          <h2 className="text-lg font-semibold text-charcoal">Import orders</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="font-heading text-2xl text-ink">Import orders</h2>
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-1 border-b border-warm-beige/30 px-5 pt-3">
+        <div className="flex flex-wrap gap-1 border-b border-line px-5 pt-3">
           {(
             [
               { value: "foodpanda-invoice", label: "Foodpanda orders / invoices" },
@@ -99,8 +99,8 @@ export default function CsvImportModal({ onClose }: { onClose: () => void }) {
             <button
               key={t.value}
               onClick={() => setMode(t.value)}
-              className={`rounded-t-lg px-3 py-2 text-sm font-medium ${
-                mode === t.value ? "border-b-2 border-terracotta text-terracotta" : "text-charcoal/50"
+              className={`rounded-t-lg px-3 py-2 text-sm font-bold ${
+                mode === t.value ? "border-b-2 border-brand text-brand" : "text-ink-muted"
               }`}
             >
               {t.label}
@@ -169,10 +169,10 @@ function GenericImport({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
-        <p className="text-sm text-charcoal/60">
+        <p className="text-sm text-ink-muted">
           For hand-compiled order data with full item detail — one row per line item, grouped by order_ref.
         </p>
-        <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-sm text-terracotta hover:underline">
+        <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-sm text-brand hover:underline">
           <Download size={14} /> Download CSV template
         </button>
 
@@ -186,7 +186,7 @@ function GenericImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-6 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-6 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {fileName || "Choose a CSV file"}
@@ -194,7 +194,7 @@ function GenericImport({ onClose }: { onClose: () => void }) {
         </div>
 
         {parseErrors.length > 0 && (
-          <div className="rounded-lg bg-maroon/10 p-3 text-xs text-maroon">
+          <div className="rounded-lg bg-danger-soft p-3 text-xs text-danger">
             {parseErrors.map((e, i) => (
               <p key={i}>{e}</p>
             ))}
@@ -202,19 +202,19 @@ function GenericImport({ onClose }: { onClose: () => void }) {
         )}
 
         {rows && !result && (
-          <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">
-            Found <span className="font-semibold">{rows.length}</span> line(s) across{" "}
-            <span className="font-semibold">{orderCount}</span> order(s). Items are matched by name against your
+          <div className="rounded-lg bg-sunken p-3 text-sm text-ink-muted">
+            Found <span className="font-bold">{rows.length}</span> line(s) across{" "}
+            <span className="font-bold">{orderCount}</span> order(s). Items are matched by name against your
             current menu — cost is pulled from each item&apos;s cost price automatically.
           </div>
         )}
 
         {result && (
           <div className="space-y-2">
-            <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">Imported {result.imported} order(s).</div>
+            <div className="rounded-lg bg-leaf-soft p-3 text-sm text-leaf">Imported {result.imported} order(s).</div>
             {result.failedCount > 0 && (
-              <div className="rounded-lg bg-maroon/10 p-3 text-xs text-maroon">
-                <p className="mb-1 font-medium">{result.failedCount} order(s) failed:</p>
+              <div className="rounded-lg bg-danger-soft p-3 text-xs text-danger">
+                <p className="mb-1 font-bold">{result.failedCount} order(s) failed:</p>
                 {result.results
                   .filter((r) => r.status === "error")
                   .map((r) => (
@@ -228,15 +228,15 @@ function GenericImport({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-warm-beige/30 px-5 py-4">
-        <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+        <button onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
           {result ? "Close" : "Cancel"}
         </button>
         {!result && (
           <button
             onClick={handleImport}
             disabled={!rows || rows.length === 0 || importing}
-            className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
           >
             {importing ? "Importing…" : "Import orders"}
           </button>
@@ -314,13 +314,13 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
-        <p className="text-sm text-charcoal/60">
+        <p className="text-sm text-ink-muted">
           Upload the exports from your Foodpanda vendor portal — Reports → Orders per day (required) and Popular
           dishes (optional, used to estimate cost of goods).
         </p>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-charcoal/50">Orders per day CSV (required)</p>
+          <p className="mb-1 text-xs font-bold text-ink-muted">Orders per day CSV (required)</p>
           <input
             ref={daysInputRef}
             type="file"
@@ -330,7 +330,7 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => daysInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-4 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-4 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {daysFileName || "Choose ordersPerDay.csv"}
@@ -338,7 +338,7 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-charcoal/50">Popular dishes CSV (recommended, for item-level detail)</p>
+          <p className="mb-1 text-xs font-bold text-ink-muted">Popular dishes CSV (recommended, for item-level detail)</p>
           <input
             ref={dishesInputRef}
             type="file"
@@ -348,7 +348,7 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => dishesInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-4 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-4 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {dishesFileName || "Choose popularDishes.csv"}
@@ -356,8 +356,8 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
         </div>
 
         {days && !result && (
-          <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">
-            Found <span className="font-semibold">{days.length}</span> day(s). Each day&apos;s real order count is
+          <div className="rounded-lg bg-sunken p-3 text-sm text-ink-muted">
+            Found <span className="font-bold">{days.length}</span> day(s). Each day&apos;s real order count is
             preserved — its sales are split evenly across that many orders, and the popular dishes mix is allocated
             proportionally across all of them so item quantity, cost and profit stay trackable per order.
           </div>
@@ -365,13 +365,13 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
 
         {result && (
           <div className="space-y-2">
-            <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">
+            <div className="rounded-lg bg-leaf-soft p-3 text-sm text-leaf">
               Imported {result.orderCount} order(s) across {result.imported} day(s)
               {result.skipped > 0 ? `, skipped ${result.skipped} empty day(s)` : ""}.
             </div>
             {result.unmatchedDishes.length > 0 && (
-              <div className="rounded-lg bg-warm-beige/20 p-3 text-xs text-charcoal/60">
-                <p className="mb-1 font-medium text-charcoal/70">
+              <div className="rounded-lg bg-sunken p-3 text-xs text-ink-muted">
+                <p className="mb-1 font-bold text-ink-muted">
                   {result.unmatchedDishes.length} dish(es) from the report didn&apos;t match a menu item, so their
                   quantity/cost isn&apos;t reflected — add them in Menu & Inventory for full accuracy:
                 </p>
@@ -382,15 +382,15 @@ function FoodpandaImport({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-warm-beige/30 px-5 py-4">
-        <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+        <button onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
           {result ? "Close" : "Cancel"}
         </button>
         {!result && (
           <button
             onClick={handleImport}
             disabled={!days || days.length === 0 || importing}
-            className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
           >
             {importing ? "Importing…" : "Import orders"}
           </button>
@@ -547,7 +547,7 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
-        <p className="text-sm text-charcoal/60">
+        <p className="text-sm text-ink-muted">
           Upload your order-details file any time — nightly is fine. Each order&apos;s cost of Foodpanda is
           estimated from its Payout Amount (subtotal minus payout), which matched the real invoices to the paisa
           in testing. When the weekly invoice arrives, add it here too: those orders are refreshed with the exact
@@ -556,7 +556,7 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
         </p>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-charcoal/50">Order details file (required)</p>
+          <p className="mb-1 text-xs font-bold text-ink-muted">Order details file (required)</p>
           <input
             ref={csvInputRef}
             type="file"
@@ -566,7 +566,7 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => csvInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-4 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-4 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {csvFileName || "Choose orderDetails.csv or .xlsx"}
@@ -574,7 +574,7 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <p className="mb-1 text-xs font-medium text-charcoal/50">
+          <p className="mb-1 text-xs font-bold text-ink-muted">
             Invoice files (optional — add once Foodpanda issues the weekly invoice; you can add more than one)
           </p>
           <input
@@ -587,18 +587,18 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => invoiceInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-4 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-4 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {invoiceFileNames.length > 0 ? `${invoiceFileNames.length} invoice file(s) selected` : "Choose invoice .xlsx file(s)"}
           </button>
           {invoiceFileNames.length > 0 && (
-            <p className="mt-1 text-xs text-charcoal/40">{invoiceFileNames.join(", ")}</p>
+            <p className="mt-1 text-xs text-ink-muted">{invoiceFileNames.join(", ")}</p>
           )}
         </div>
 
         {orderRows && !result && (
-          <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">
+          <div className="rounded-lg bg-sunken p-3 text-sm text-ink-muted">
             {orderRows.length} order(s) loaded
             {invoiceRows.length > 0
               ? `, ${invoiceRows.length} invoice line(s) loaded. Orders not on an invoice yet will use estimated earnings.`
@@ -606,18 +606,18 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {error && <p className="rounded-lg bg-maroon/10 p-3 text-xs text-maroon">{error}</p>}
+        {error && <p className="rounded-lg bg-danger-soft p-3 text-xs text-danger">{error}</p>}
 
         {result && (
           <div className="space-y-2">
-            <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">
+            <div className="rounded-lg bg-leaf-soft p-3 text-sm text-leaf">
               {result.created} new order(s) added, {result.updated} existing order(s) refreshed.
               {result.noInvoiceCount > 0 && ` ${result.noInvoiceCount} use estimated earnings (no invoice yet).`}
               {result.alreadyInvoiced > 0 && ` ${result.alreadyInvoiced} already have exact invoice figures and were left untouched.`}
             </div>
             {result.unmatchedDishes.length > 0 && (
-              <div className="rounded-lg bg-warm-beige/20 p-3 text-xs text-charcoal/60">
-                <p className="mb-1 font-medium text-charcoal/70">
+              <div className="rounded-lg bg-sunken p-3 text-xs text-ink-muted">
+                <p className="mb-1 font-bold text-ink-muted">
                   {result.unmatchedDishes.length} item(s) didn&apos;t match a menu item — add them in Menu &
                   Inventory for full accuracy:
                 </p>
@@ -628,15 +628,15 @@ function FoodpandaInvoiceImport({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-warm-beige/30 px-5 py-4">
-        <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+        <button onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
           {result ? "Close" : "Cancel"}
         </button>
         {!result && (
           <button
             onClick={handleImport}
             disabled={!orderRows || importing}
-            className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
           >
             {importing ? "Importing…" : "Import orders"}
           </button>

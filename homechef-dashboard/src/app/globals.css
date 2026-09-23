@@ -1,26 +1,215 @@
 @import "tailwindcss";
 
+/* Rozana design system tokens — light (cream) by default, dark (evening) follows the system setting. */
 :root {
-  --background: #f8f5ec;
-  --foreground: #1f1f1f;
+  /* Softened from the brand board's pure cream/charcoal so long sessions are easy on the eyes. */
+  --surface-ground: #efe8d8;
+  --surface-card: #f7f2e6;
+  --surface-sunken: #e6dcc6;
+  --ink: #2e2822;
+  --on-ink: #f7f2e6;
+  --ink-muted: #5e5548;
+  --line: #dccfb6;
+  --control-border: #b3a389;
+  --brand: #6b1f1f;
+  --on-brand: #f7f2e6;
+  --terracotta: #8b3b2f;
+  --beige: #d9c3a8;
+  --brand-soft: #eddac6;
+  --brand-deep: #5a1a1a;
+  --leaf: #3f5237;
+  --leaf-soft: #dae3cc;
+  --stone: #3b342b;
+  --stone-soft: #e2d6bd;
+  --warn: #6e4a08;
+  --warn-soft: #f0dfae;
+  --danger: #a3261f;
+  --danger-soft: #f1d6cb;
+  --elevation-card: 0 1px 0 rgba(31, 26, 20, 0.05), 0 4px 14px rgba(31, 26, 20, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-ground: #181815;
+    --surface-card: #23231e;
+    --surface-sunken: #12120f;
+    --ink: #f4efe3;
+    --on-ink: #181815;
+    --ink-muted: #cfc7b4;
+    --line: #3d3a31;
+    --control-border: #9a8f79;
+    --brand: #e39a86;
+    --on-brand: #1f1f1f;
+    --terracotta: #d98570;
+    --beige: #5a4e3b;
+    --brand-soft: #4a2620;
+    --brand-deep: #f7cfc0;
+    --leaf: #a9c79b;
+    --leaf-soft: #27331f;
+    --stone: #ddd1b9;
+    --stone-soft: #38322a;
+    --warn: #f0c468;
+    --warn-soft: #463205;
+    --danger: #ff9f92;
+    --danger-soft: #4d211c;
+    --elevation-card: 0 2px 0 rgba(0, 0, 0, 0.4);
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ground: var(--surface-ground);
+  --color-card: var(--surface-card);
+  --color-sunken: var(--surface-sunken);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-control: var(--control-border);
+  --color-brand: var(--brand);
+  --color-on-brand: var(--on-brand);
+  --color-terracotta: var(--terracotta);
+  --color-beige: var(--beige);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-deep: var(--brand-deep);
+  --color-leaf: var(--leaf);
+  --color-leaf-soft: var(--leaf-soft);
+  --color-stone: var(--stone);
+  --color-stone-soft: var(--stone-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
 
-  --color-cream: #f8f5ec;
-  --color-sage: #3f5237;
-  --color-terracotta: #8b3e2f;
-  --color-warm-beige: #d9c3a8;
-  --color-maroon: #6b1f1f;
-  --color-charcoal: #1f1f1f;
+  --font-sans: var(--font-atkinson), "Segoe UI", system-ui, sans-serif;
+  --font-serif: var(--font-marcellus), Georgia, serif;
+  --font-urdu: var(--font-nastaliq), "Jameel Noori Nastaleeq", serif;
+
+  /*  */
+  /* Regular reading sizes: body 15px, nothing under 13px. */
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-caption: 13px;
+  --text-caption--line-height: 18px;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-xs: 13px;
+  --text-xs--line-height: 18px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 15px;
+  --text-base--line-height: 22px;
+  --text-lg: 17px;
+  --text-lg--line-height: 24px;
+  --text-xl: 19px;
+  --text-xl--line-height: 26px;
+  --text-2xl: 22px;
+  --text-2xl--line-height: 28px;
+  --text-3xl: 26px;
+  --text-3xl--line-height: 32px;
+  --text-4xl: 30px;
+  --text-4xl--line-height: 36px;
+  --text-5xl: 34px;
+  --text-5xl--line-height: 40px;
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  --shadow-card: var(--elevation-card);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--surface-ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-heading {
+  font-family: var(--font-serif);
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.font-wordmark {
+  font-family: var(--font-serif);
+  letter-spacing: 0.24em;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.font-urdu {
+  font-family: var(--font-urdu);
+  line-height: 64px;
+}
+
+/* Focus ring: 4px brand. */
+:focus-visible {
+  outline: 4px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Every clickable thing is at least 40px tall. */
+button,
+select,
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+summary {
+  min-height: 40px;
+}
+button {
+  min-width: 40px;
+}
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]) {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+table td,
+table th {
+  height: 40px;
+}
+
+/* One look for every form field: control-border, radius-sm, card ground. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+select,
+textarea {
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--ink);
+  padding-inline: 14px;
+  font-size: 15px;
+}
+
+::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.8;
+}
+
+@media print {
+  :root {
+    --surface-ground: #ffffff;
+    --surface-card: #ffffff;
+    --surface-sunken: #efe7d6;
+    --ink: #1f1f1f;
+    --ink-muted: #453f36;
+    --line: #d9c3a8;
+    --leaf: #3f5237;
+    --brand: #6b1f1f;
+  }
+  html,
+  body {
+    font-size: 16px;
+  }
 }

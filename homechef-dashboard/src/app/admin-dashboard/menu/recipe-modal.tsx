@@ -104,21 +104,21 @@ export default function RecipeModal({
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-charcoal">Recipe</h2>
-            <p className="text-xs text-charcoal/50">{menuItemName}</p>
+            <h2 className="font-heading text-2xl text-ink">Recipe</h2>
+            <p className="text-xs text-ink-muted">{menuItemName}</p>
           </div>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-5">
           {lines.length === 0 && (
-            <p className="text-sm text-charcoal/40">
+            <p className="text-sm text-ink-muted">
               No recipe yet — this item&apos;s cost price is set manually in Menu & Inventory. Add ingredients or
               other menu items (for combos) below to calculate it automatically instead.
             </p>
@@ -129,10 +129,10 @@ export default function RecipeModal({
             const unit = line.ingredient?.unit ?? "×";
             const unitCost = line.ingredient?.costPerUnit ?? line.componentItem?.costPrice ?? 0;
             return (
-              <div key={line.id} className="flex items-center gap-2 rounded-lg border border-warm-beige/40 px-3 py-2">
+              <div key={line.id} className="flex items-center gap-2 rounded-sm border border-line px-3 py-2">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-charcoal">{name}</p>
-                  <p className="text-xs text-charcoal/40">
+                  <p className="text-sm font-bold text-ink">{name}</p>
+                  <p className="text-xs text-ink-muted">
                     {formatCurrency(unitCost)} / {unit}
                   </p>
                 </div>
@@ -142,19 +142,19 @@ export default function RecipeModal({
                   step="0.01"
                   defaultValue={line.quantity}
                   onBlur={(e) => updateQuantity(line.id, e.target.value)}
-                  className="w-20 rounded border border-warm-beige/40 px-2 py-1 text-sm"
+                  className="w-20 rounded border border-line px-2 py-1 text-sm"
                 />
-                <span className="w-20 text-right text-sm font-medium text-charcoal/70">
+                <span className="w-20 text-right text-sm font-bold text-ink-muted">
                   {formatCurrency(unitCost * line.quantity)}
                 </span>
-                <button onClick={() => removeLine(line.id)} className="text-charcoal/25 hover:text-maroon">
+                <button onClick={() => removeLine(line.id)} className="text-ink-muted hover:text-danger">
                   <Trash2 size={14} />
                 </button>
               </div>
             );
           })}
 
-          <form onSubmit={handleAddLine} className="space-y-2 rounded-lg bg-warm-beige/20 p-3">
+          <form onSubmit={handleAddLine} className="space-y-2 rounded-lg bg-sunken p-3">
             <div className="flex gap-2">
               <button
                 type="button"
@@ -162,8 +162,8 @@ export default function RecipeModal({
                   setKind("ingredient");
                   setSelectedId("");
                 }}
-                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium ${
-                  kind === "ingredient" ? "bg-terracotta text-white" : "bg-white text-charcoal/60"
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
+                  kind === "ingredient" ? "bg-brand text-on-brand" : "bg-card text-ink-muted"
                 }`}
               >
                 Ingredient
@@ -174,8 +174,8 @@ export default function RecipeModal({
                   setKind("item");
                   setSelectedId("");
                 }}
-                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium ${
-                  kind === "item" ? "bg-terracotta text-white" : "bg-white text-charcoal/60"
+                className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold ${
+                  kind === "item" ? "bg-brand text-on-brand" : "bg-card text-ink-muted"
                 }`}
               >
                 Menu item (combo)
@@ -185,7 +185,7 @@ export default function RecipeModal({
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}
-                className="flex-1 rounded-lg border border-warm-beige/60 px-2 py-1.5 text-sm"
+                className="flex-1 rounded-sm border border-control px-2 py-1.5 text-sm"
               >
                 <option value="">
                   {kind === "ingredient" ? "Select ingredient…" : "Select menu item…"}
@@ -202,26 +202,26 @@ export default function RecipeModal({
                 step="0.01"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="w-20 rounded-lg border border-warm-beige/60 px-2 py-1.5 text-sm"
+                className="w-20 rounded-sm border border-control px-2 py-1.5 text-sm"
               />
               <button
                 type="submit"
                 disabled={adding}
-                className="flex items-center gap-1 rounded-lg bg-terracotta px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="flex items-center gap-1 rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
               >
                 <Plus size={13} /> Add
               </button>
             </div>
             {kind === "ingredient" && ingredients.length === 0 && (
-              <p className="text-xs text-charcoal/40">No ingredients yet — add some under Ingredients first.</p>
+              <p className="text-xs text-ink-muted">No ingredients yet — add some under Ingredients first.</p>
             )}
-            {error && <p className="text-xs text-maroon">{error}</p>}
+            {error && <p className="text-xs text-danger">{error}</p>}
           </form>
         </div>
 
-        <div className="flex items-center justify-between border-t border-warm-beige/30 px-5 py-4">
-          <span className="text-sm text-charcoal/60">Calculated cost</span>
-          <span className="text-lg font-semibold text-charcoal">{formatCurrency(totalCost)}</span>
+        <div className="flex items-center justify-between border-t border-line px-5 py-4">
+          <span className="text-sm text-ink-muted">Calculated cost</span>
+          <span className="text-lg font-bold text-ink">{formatCurrency(totalCost)}</span>
         </div>
       </div>
     </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { formatCurrency, formatDateTime } from "@/lib/format";
+import { formatCurrency, formatDateTime, STATUS_LABELS } from "@/lib/format";
 import { orderFinancials } from "@/lib/finance";
+import { Badge } from "@/components/ui";
 
 interface OrderItem {
   quantity: number;
@@ -15,58 +16,70 @@ export interface OrderRow {
   status: string;
   totalAmount: number;
   createdAt: string;
+  wastage?: boolean;
   costOverride?: number | null;
   platformCutOverride?: number | null;
   customer: { name: string };
   items: OrderItem[];
 }
 
-const CHANNEL_STYLES: Record<string, string> = {
-  DIRECT: "bg-terracotta/10 text-terracotta",
-  FOODPANDA: "bg-maroon/10 text-maroon",
-};
+function StatusBadge({ order }: { order: OrderRow }) {
+  if (order.status === "CANCELLED") {
+    return order.wastage ? <Badge tone="warn">Wastage</Badge> : <Badge tone="bad">Cancelled</Badge>;
+  }
+  if (order.status === "DELIVERED") return <Badge tone="good">Successful</Badge>;
+  return <Badge tone="warn">{STATUS_LABELS[order.status] ?? order.status}</Badge>;
+}
 
-export default function OrderTable({ orders, onSelect }: { orders: OrderRow[]; onSelect: (id: string) => void }) {
+export default function OrderTable({
+  orders,
+  onSelect,
+  limit,
+}: {
+  orders: OrderRow[];
+  onSelect: (id: string) => void;
+  limit?: number;
+}) {
+  const rows = limit ? orders.slice(0, limit) : orders;
   return (
-    <div className="overflow-x-auto rounded-xl border border-warm-beige/40 bg-white">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-lg bg-card shadow-card">
+      <table className="w-full text-body-lg">
         <thead>
-          <tr className="border-b border-warm-beige/30 text-left text-xs uppercase text-charcoal/40">
-            <th className="px-4 py-3 font-medium">Date</th>
-            <th className="px-4 py-3 font-medium">Customer</th>
-            <th className="px-4 py-3 font-medium">Channel</th>
-            <th className="px-4 py-3 text-right font-medium">Revenue</th>
-            <th className="px-4 py-3 text-right font-medium">Cost</th>
-            <th className="px-4 py-3 text-right font-medium">Profit</th>
+          <tr className="bg-sunken text-left text-label font-bold text-ink-muted">
+            <th className="px-4 py-2 font-bold">Order</th>
+            <th className="px-4 py-2 font-bold">Date</th>
+            <th className="px-4 py-2 font-bold">Status</th>
+            <th className="px-4 py-2 text-right font-bold">Sales</th>
+            <th className="px-4 py-2 text-right font-bold">You receive</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-warm-beige/20">
-          {orders.map((order) => {
+        <tbody className="divide-y divide-line">
+          {rows.map((order) => {
             const fin = orderFinancials(order);
             return (
               <tr
                 key={order.id}
                 onClick={() => onSelect(order.id)}
-                className="cursor-pointer hover:bg-cream"
+                className="cursor-pointer hover:bg-sunken"
               >
-                <td className="px-4 py-3 text-charcoal/50">{formatDateTime(order.createdAt)}</td>
-                <td className="px-4 py-3 font-medium text-charcoal">{order.customer.name}</td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CHANNEL_STYLES[order.channel]}`}>
-                    {order.channel === "FOODPANDA" ? "Foodpanda" : "Direct"}
-                  </span>
+                <td className="px-4 py-2">
+                  <p className="font-bold text-ink">{order.customer.name}</p>
+                  <p className="text-caption text-ink-muted">{order.channel === "FOODPANDA" ? "Foodpanda" : "Direct"}</p>
                 </td>
-                <td className="px-4 py-3 text-right text-charcoal/70">{formatCurrency(fin.revenue)}</td>
-                <td className="px-4 py-3 text-right text-charcoal/50">{formatCurrency(fin.cost + fin.platformCut)}</td>
-                <td className={`px-4 py-3 text-right font-medium ${fin.profit >= 0 ? "text-sage" : "text-maroon"}`}>
-                  {formatCurrency(fin.profit)}
+                <td className="px-4 py-2 text-ink-muted">{formatDateTime(order.createdAt)}</td>
+                <td className="px-4 py-2">
+                  <StatusBadge order={order} />
+                </td>
+                <td className="px-4 py-2 text-right text-ink">{formatCurrency(fin.revenue)}</td>
+                <td className="px-4 py-2 text-right font-bold text-ink">
+                  {formatCurrency(order.status === "CANCELLED" ? 0 : fin.revenue - fin.platformCut)}
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      {orders.length === 0 && <p className="p-6 text-center text-sm text-charcoal/40">No orders in this period.</p>}
+      {rows.length === 0 && <p className="p-6 text-center text-body text-ink-muted">No orders in this period.</p>}
     </div>
   );
 }

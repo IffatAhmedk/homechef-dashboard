@@ -172,12 +172,12 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
-          <h2 className="text-lg font-semibold text-charcoal">{isEdit ? "Edit order" : "Add order"}</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="font-heading text-2xl text-ink">{isEdit ? "Edit order" : "Add order"}</h2>
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
@@ -188,7 +188,7 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                 key={c}
                 type="button"
                 onClick={() => setChannel(c)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${channel === c ? "bg-terracotta text-white" : "bg-warm-beige/20 text-charcoal/60"
+                className={`rounded-lg px-3 py-1.5 text-sm font-bold ${channel === c ? "bg-brand text-on-brand" : "bg-sunken text-ink-muted"
                   }`}
               >
                 {c === "FOODPANDA" ? "Foodpanda" : "Direct"}
@@ -203,20 +203,20 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                 placeholder="Customer name (type to find existing)"
                 value={name}
                 onChange={(e) => typeCustomerField("name", e.target.value)}
-                className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-control px-3 py-2 text-sm"
               />
               {showMatches && (
-                <ul className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-warm-beige/60 bg-white shadow-lg">
+                <ul className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-control bg-card shadow-lg">
                   {matches.map((c) => (
                     <li key={c.id}>
                       <button
                         type="button"
                         onClick={() => pickCustomer(c)}
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-cream"
+                        className="block w-full px-3 py-2 text-left text-sm hover:bg-sunken"
                       >
-                        <span className="font-medium text-charcoal">{c.name}</span>
-                        <span className="ml-2 text-charcoal/50">{c.phone || "no phone"}</span>
-                        {c.address && <span className="block truncate text-xs text-charcoal/40">{c.address}</span>}
+                        <span className="font-bold text-ink">{c.name}</span>
+                        <span className="ml-2 text-ink-muted">{c.phone || "no phone"}</span>
+                        {c.address && <span className="block truncate text-xs text-ink-muted">{c.address}</span>}
                       </button>
                     </li>
                   ))}
@@ -227,24 +227,24 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
               placeholder="Phone (type to find existing)"
               value={phone}
               onChange={(e) => typeCustomerField("phone", e.target.value)}
-              className="rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="rounded-sm border border-control px-3 py-2 text-sm"
             />
             <input
               type="datetime-local"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="rounded-sm border border-control px-3 py-2 text-sm"
             />
             <input
               placeholder="Delivery address (optional)"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="col-span-2 rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="col-span-2 rounded-sm border border-control px-3 py-2 text-sm"
             />
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="col-span-2 rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="col-span-2 rounded-sm border border-control px-3 py-2 text-sm"
             >
               {[...STATUS_FLOW, "CANCELLED"].map((s) => (
                 <option key={s} value={s}>
@@ -260,7 +260,7 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                 <select
                   value={row.menuItemId}
                   onChange={(e) => selectItem(i, e.target.value)}
-                  className="flex-1 rounded-lg border border-warm-beige/60 px-2 py-1.5 text-sm"
+                  className="flex-1 rounded-sm border border-control px-2 py-1.5 text-sm"
                 >
                   <option value="">Select item…</option>
                   {menuItems.map((m) => (
@@ -274,7 +274,7 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                   min="1"
                   value={row.quantity}
                   onChange={(e) => updateRow(i, { quantity: e.target.value })}
-                  className="w-16 rounded-lg border border-warm-beige/60 px-2 py-1.5 text-sm"
+                  className="w-16 rounded-sm border border-control px-2 py-1.5 text-sm"
                 />
                 <input
                   type="number"
@@ -282,22 +282,22 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                   value={row.price}
                   onChange={(e) => updateRow(i, { price: e.target.value })}
                   placeholder="Price"
-                  className="w-20 rounded-lg border border-warm-beige/60 px-2 py-1.5 text-sm"
+                  className="w-20 rounded-sm border border-control px-2 py-1.5 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => removeRow(i)}
                   disabled={rows.length === 1}
-                  className="text-charcoal/25 hover:text-maroon disabled:opacity-30"
+                  className="flex items-center gap-1 rounded-pill px-3 text-label font-bold text-danger hover:bg-danger-soft disabled:opacity-30"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} strokeWidth={2.4} /> Remove
                 </button>
               </div>
             ))}
             <button
               type="button"
               onClick={addRow}
-              className="flex items-center gap-1 text-sm text-terracotta hover:underline"
+              className="flex items-center gap-1 text-sm text-brand hover:underline"
             >
               <Plus size={14} /> Add item
             </button>
@@ -307,11 +307,11 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
             placeholder="Notes (optional)"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="mt-3 w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+            className="mt-3 w-full rounded-sm border border-control px-3 py-2 text-sm"
           />
 
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-warm-beige/30 pt-3">
-            <label className="text-xs text-charcoal/50">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-line pt-3">
+            <label className="text-xs text-ink-muted">
               Flat discount
               <input
                 type="number"
@@ -319,10 +319,10 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
                 placeholder="0"
-                className="mt-1 w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm text-charcoal"
+                className="mt-1 w-full rounded-sm border border-control px-3 py-2 text-sm text-ink"
               />
             </label>
-            <label className="text-xs text-charcoal/50">
+            <label className="text-xs text-ink-muted">
               Delivery charges (DC)
               <input
                 type="number"
@@ -330,10 +330,10 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                 value={deliveryCharge}
                 onChange={(e) => setDeliveryCharge(e.target.value)}
                 placeholder="0"
-                className="mt-1 w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm text-charcoal"
+                className="mt-1 w-full rounded-sm border border-control px-3 py-2 text-sm text-ink"
               />
             </label>
-            <label className="text-xs text-charcoal/50">
+            <label className="text-xs text-ink-muted">
               Tip
               <input
                 type="number"
@@ -341,26 +341,26 @@ export default function AddOrderModal({ onClose, editOrder }: { onClose: () => v
                 value={tip}
                 onChange={(e) => setTip(e.target.value)}
                 placeholder="0"
-                className="mt-1 w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm text-charcoal"
+                className="mt-1 w-full rounded-sm border border-control px-3 py-2 text-sm text-ink"
               />
             </label>
           </div>
 
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-charcoal/60">Total</span>
-            <span className="text-lg font-semibold text-charcoal">{formatCurrency(total)}</span>
+            <span className="text-sm text-ink-muted">Total</span>
+            <span className="text-lg font-bold text-ink">{formatCurrency(total)}</span>
           </div>
 
-          {error && <p className="mt-2 text-sm text-maroon">{error}</p>}
+          {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
           <div className="mt-4 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+            <button type="button" onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
             >
               {submitting ? "Saving…" : isEdit ? "Save changes" : "Add order"}
             </button>

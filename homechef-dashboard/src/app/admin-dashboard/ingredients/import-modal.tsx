@@ -71,21 +71,21 @@ export default function IngredientsImportModal({ onClose }: { onClose: () => voi
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
-          <h2 className="text-lg font-semibold text-charcoal">Import ingredients</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="font-heading text-2xl text-ink">Import ingredients</h2>
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
-          <p className="text-sm text-charcoal/60">
+          <p className="text-sm text-ink-muted">
             Existing ingredients (matched by name) get their cost updated; new names are added. Any menu items using
             an updated ingredient will have their cost recalculated automatically.
           </p>
-          <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-sm text-terracotta hover:underline">
+          <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-sm text-brand hover:underline">
             <Download size={14} /> Download CSV template
           </button>
 
@@ -99,7 +99,7 @@ export default function IngredientsImportModal({ onClose }: { onClose: () => voi
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-6 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-6 text-sm text-ink-muted hover:border-brand hover:text-brand"
             >
               <Upload size={16} />
               {fileName || "Choose a CSV file"}
@@ -107,18 +107,18 @@ export default function IngredientsImportModal({ onClose }: { onClose: () => voi
           </div>
 
           {rows && !result && (
-            <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">
+            <div className="rounded-lg bg-sunken p-3 text-sm text-ink-muted">
               Found {rows.length} row(s).
             </div>
           )}
 
           {result && (
             <div className="space-y-2">
-              <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">
+              <div className="rounded-lg bg-leaf-soft p-3 text-sm text-leaf">
                 {result.created} created, {result.updated} updated.
               </div>
               {result.errors.length > 0 && (
-                <div className="rounded-lg bg-maroon/10 p-3 text-xs text-maroon">
+                <div className="rounded-lg bg-danger-soft p-3 text-xs text-danger">
                   {result.errors.map((e, i) => (
                     <p key={i}>
                       {e.row}: {e.message}
@@ -130,15 +130,15 @@ export default function IngredientsImportModal({ onClose }: { onClose: () => voi
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-warm-beige/30 px-5 py-4">
-          <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+        <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+          <button onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
             {result ? "Close" : "Cancel"}
           </button>
           {!result && (
             <button
               onClick={handleImport}
               disabled={!rows || rows.length === 0 || importing}
-              className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
             >
               {importing ? "Importing…" : "Import"}
             </button>

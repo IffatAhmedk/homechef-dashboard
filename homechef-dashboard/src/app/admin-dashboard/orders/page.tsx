@@ -60,12 +60,12 @@ export default function AdminOrdersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-charcoal">Orders</h1>
-          <p className="text-sm text-charcoal/50">Kitchen & delivery workflow — move orders through their status.</p>
+          <h1 className="font-heading text-3xl text-ink">Orders</h1>
+          <p className="text-sm text-ink-muted">Kitchen & delivery workflow — move orders through their status.</p>
         </div>
         <button
           onClick={() => setShowAddOrder(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-terracotta px-3 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="flex items-center gap-1.5 rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90"
         >
           <Plus size={16} /> Add order
         </button>
@@ -76,10 +76,10 @@ export default function AdminOrdersPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+            className={`rounded-pill border px-3 py-1 text-xs font-bold ${
               filter === f
-                ? "border-terracotta bg-terracotta text-white"
-                : "border-warm-beige/50 bg-white text-charcoal/60 hover:bg-cream"
+                ? "border-brand bg-brand text-on-brand"
+                : "border-line bg-card text-ink-muted hover:bg-sunken"
             }`}
           >
             {f === "ALL" ? "All" : STATUS_LABELS[f]}
@@ -87,9 +87,9 @@ export default function AdminOrdersPage() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-warm-beige/40 bg-white">
-        {filtered.length === 0 && <p className="p-6 text-center text-sm text-charcoal/40">No orders here.</p>}
-        <ul className="divide-y divide-warm-beige/20">
+      <div className="overflow-hidden rounded-lg border border-line bg-card">
+        {filtered.length === 0 && <p className="p-6 text-center text-sm text-ink-muted">No orders here.</p>}
+        <ul className="divide-y divide-line">
           {filtered.map((order) => {
             const next = nextStatus(order.status);
             const isExpanded = expanded === order.id;
@@ -100,23 +100,23 @@ export default function AdminOrdersPage() {
                     className="text-left"
                     onClick={() => setExpanded(isExpanded ? null : order.id)}
                   >
-                    <p className="font-medium text-charcoal">
+                    <p className="font-bold text-ink">
                       #{order.id.slice(-8).toUpperCase()} · {order.customer.name}
                     </p>
-                    <p className="text-xs text-charcoal/50">
+                    <p className="text-xs text-ink-muted">
                       {order.customer.phone} · {formatDateTime(order.createdAt)}
                     </p>
                   </button>
                   <div className="flex items-center gap-3">
-                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[order.status]}`}>
+                    <span className={`rounded-pill border px-2 py-0.5 text-xs font-bold ${STATUS_COLORS[order.status]}`}>
                       {STATUS_LABELS[order.status]}
                     </span>
-                    <span className="font-semibold text-charcoal">{formatCurrency(order.totalAmount)}</span>
+                    <span className="font-bold text-ink">{formatCurrency(order.totalAmount)}</span>
                     {next && (
                       <button
                         onClick={() => updateStatus(order.id, next)}
                         disabled={updating === order.id}
-                        className="rounded-lg bg-terracotta px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+                        className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
                       >
                         Mark {STATUS_LABELS[next]}
                       </button>
@@ -125,7 +125,7 @@ export default function AdminOrdersPage() {
                       <button
                         onClick={() => updateStatus(order.id, "CANCELLED")}
                         disabled={updating === order.id}
-                        className="text-xs text-maroon hover:underline"
+                        className="text-xs text-danger hover:underline"
                       >
                         Cancel
                       </button>
@@ -134,12 +134,12 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {isExpanded && (
-                  <div className="mt-3 rounded-lg bg-cream p-3 text-sm">
-                    <p className="mb-2 text-charcoal/60">Deliver to: {order.deliveryAddress}</p>
-                    {order.notes && <p className="mb-2 text-charcoal/60">Note: {order.notes}</p>}
+                  <div className="mt-3 rounded-lg bg-sunken p-3 text-sm">
+                    <p className="mb-2 text-ink-muted">Deliver to: {order.deliveryAddress}</p>
+                    {order.notes && <p className="mb-2 text-ink-muted">Note: {order.notes}</p>}
                     <ul className="space-y-1">
                       {order.items.map((item) => (
-                        <li key={item.id} className="flex justify-between text-charcoal/70">
+                        <li key={item.id} className="flex justify-between text-ink-muted">
                           <span>{item.quantity} × {item.menuItem.name}</span>
                           <span>{formatCurrency(item.priceAtSale * item.quantity)}</span>
                         </li>

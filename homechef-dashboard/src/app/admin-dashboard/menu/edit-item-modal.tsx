@@ -94,43 +94,43 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
-          <h2 className="text-lg font-semibold text-charcoal">Edit item</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="font-heading text-2xl text-ink">Edit item</h2>
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 space-y-3 overflow-y-auto p-5">
           <div>
-            <label className="mb-1 block text-xs font-medium text-charcoal/50">Name</label>
+            <label className="mb-1 block text-xs font-bold text-ink-muted">Name</label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-control px-3 py-2 text-sm"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-charcoal/50">Description</label>
+            <label className="mb-1 block text-xs font-bold text-ink-muted">Description</label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-control px-3 py-2 text-sm"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-charcoal/50">Category</label>
+            <label className="mb-1 block text-xs font-bold text-ink-muted">Category</label>
             <input
               required
               list="edit-category-options"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
-              className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              className="w-full rounded-sm border border-control px-3 py-2 text-sm"
             />
             <datalist id="edit-category-options">
               {categories.map((c) => (
@@ -141,20 +141,20 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-charcoal/50">Price</label>
+              <label className="mb-1 block text-xs font-bold text-ink-muted">Price</label>
               <input
                 required
                 type="number"
                 min="0"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-control px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-charcoal/50">Cost price</label>
+              <label className="mb-1 block text-xs font-bold text-ink-muted">Cost price</label>
               {costIsAuto ? (
-                <div className="flex items-center rounded-lg border border-warm-beige/40 bg-cream px-3 py-2 text-sm text-charcoal/50">
+                <div className="flex items-center rounded-lg border border-line bg-sunken px-3 py-2 text-sm text-ink-muted">
                   Rs {item.costPrice.toFixed(0)} (auto-calculated)
                 </div>
               ) : (
@@ -163,7 +163,7 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
                   min="0"
                   value={costPrice}
                   onChange={(e) => setCostPrice(e.target.value)}
-                  className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+                  className="w-full rounded-sm border border-control px-3 py-2 text-sm"
                 />
               )}
             </div>
@@ -171,15 +171,15 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
 
           {hasRecipe && !item.isDeal && (
             <div>
-              <label className="mb-1 block text-xs font-medium text-charcoal/50">Batch yield (servings)</label>
+              <label className="mb-1 block text-xs font-bold text-ink-muted">Batch yield (servings)</label>
               <input
                 type="number"
                 min="1"
                 value={batchYield}
                 onChange={(e) => setBatchYield(e.target.value)}
-                className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-control px-3 py-2 text-sm"
               />
-              <p className="mt-1 text-xs text-charcoal/40">
+              <p className="mt-1 text-xs text-ink-muted">
                 If the recipe&apos;s ingredient quantities are for a whole batch (e.g. a dough that makes 20
                 parathas), set this to how many servings that batch yields. Leave at 1 if quantities are already
                 per serving.
@@ -188,9 +188,9 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-charcoal/50">Stock quantity</label>
+            <label className="mb-1 block text-xs font-bold text-ink-muted">Stock quantity</label>
             {item.isDeal ? (
-              <div className="rounded-lg border border-warm-beige/40 bg-cream px-3 py-2 text-sm text-charcoal/50">
+              <div className="rounded-lg border border-line bg-sunken px-3 py-2 text-sm text-ink-muted">
                 {item.availableQty} can be made from the items in this deal
               </div>
             ) : (
@@ -199,31 +199,31 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
                 min="0"
                 value={stockQty}
                 onChange={(e) => setStockQty(e.target.value)}
-                className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+                className="w-full rounded-sm border border-control px-3 py-2 text-sm"
               />
             )}
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-charcoal/70">
+          <label className="flex items-center gap-2 text-sm text-ink-muted">
             <input
               type="checkbox"
               checked={isAvailable}
               onChange={(e) => setIsAvailable(e.target.checked)}
-              className="h-4 w-4 accent-terracotta"
+              className="h-4 w-4 accent-brand"
             />
             Available
           </label>
 
-          {error && <p className="text-sm text-maroon">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
-          <div className="flex justify-end gap-2 border-t border-warm-beige/30 pt-3">
-            <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+          <div className="flex justify-end gap-2 border-t border-line pt-3">
+            <button type="button" onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save changes"}
             </button>

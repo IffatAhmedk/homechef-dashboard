@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { syncOrderStock } from "@/lib/stock-ledger";
 
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
 const VALID_CHANNELS = ["DIRECT", "FOODPANDA"];
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
         });
       });
 
+      await syncOrderStock(prisma, order.id);
       results.push({ order_ref: ref, status: "ok", orderId: order.id });
     } catch (err) {
       results.push({

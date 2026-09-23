@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveCustomer } from "@/lib/customer";
+import { syncOrderStock } from "@/lib/stock-ledger";
 import { assertStockCovers, applyStockDelta, baseRequirements } from "@/lib/stock";
 
 export async function GET(req: NextRequest) {
@@ -125,6 +126,7 @@ export async function POST(req: NextRequest) {
       });
     });
 
+    await syncOrderStock(prisma, order.id);
     return NextResponse.json(order, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to place order";

@@ -140,7 +140,20 @@ export async function GET(req: NextRequest) {
   const allTimeProfit = allTimeSales - allTimeCost - investmentSpent;
   const paidBackPct = investmentSpent > 0 ? Math.max(0, Math.min(100, (allTimeProfit / investmentSpent) * 100)) : null;
 
+  const movements = await prisma.stockMovement.findMany({
+    where: { date: { gte: from, lte: to }, type: { in: ["PURCHASE", "SALE", "WASTAGE"] } },
+    select: { type: true, quantity: true, unitCost: true },
+  });
+  const stock = { purchased: 0, usedInSales: 0, wastage: 0 };
+  for (const m of movements) {
+    const value = Math.abs(m.quantity) * (m.unitCost ?? 0);
+    if (m.type === "PURCHASE") stock.purchased += value;
+    else if (m.type === "SALE") stock.usedInSales += value;
+    else stock.wastage += value;
+  }
+
   return NextResponse.json({
+    stock,
     from: from.toISOString(),
     to: to.toISOString(),
     sales,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { syncOrdersStock } from "@/lib/stock-ledger";
 
 interface OrderRow {
   externalId: string;
@@ -132,6 +133,7 @@ export async function POST(req: NextRequest) {
     invoiceIdByNumber.set(invoiceNumber, invoice.id);
   }
 
+  const touchedOrderIds: string[] = [];
   let created = 0;
   let updated = 0;
   let estimated = 0;
@@ -197,9 +199,10 @@ export async function POST(req: NextRequest) {
         where: { id: existingId },
         data: { ...orderFields, items: { create: itemsData } },
       });
+      touchedOrderIds.push(existingId);
       updated++;
     } else {
-      await prisma.order.create({
+      const createdOrder = await prisma.order.create({
         data: {
           customerId: customer.id,
           deliveryAddress: "",
@@ -210,10 +213,13 @@ export async function POST(req: NextRequest) {
           items: { create: itemsData },
         },
       });
+      touchedOrderIds.push(createdOrder.id);
       created++;
     }
     if (!invoiceRow) estimated++;
   }
+
+  await syncOrdersStock(prisma, touchedOrderIds);
 
   // Recompute each touched invoice's total payout from its now-linked orders.
   for (const invoiceId of invoiceIdByNumber.values()) {

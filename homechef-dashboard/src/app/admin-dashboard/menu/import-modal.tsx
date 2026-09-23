@@ -70,16 +70,16 @@ export default function MenuImportModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-charcoal/30" onClick={onClose} />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-warm-beige/30 px-5 py-4">
-          <h2 className="text-lg font-semibold text-charcoal">Import menu</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-charcoal/40 hover:bg-cream">
-            <X size={18} />
+      <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="font-heading text-2xl text-ink">Import menu</h2>
+          <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
+            <X size={18} strokeWidth={2.4} /> Close
           </button>
         </div>
 
-        <div className="flex gap-1 border-b border-warm-beige/30 px-5 pt-3">
+        <div className="flex gap-1 border-b border-line px-5 pt-3">
           {(
             [
               { value: "items", label: "Menu items" },
@@ -89,8 +89,8 @@ export default function MenuImportModal({ onClose }: { onClose: () => void }) {
             <button
               key={t.value}
               onClick={() => setMode(t.value)}
-              className={`rounded-t-lg px-3 py-2 text-sm font-medium ${
-                mode === t.value ? "border-b-2 border-terracotta text-terracotta" : "text-charcoal/50"
+              className={`rounded-t-lg px-3 py-2 text-sm font-bold ${
+                mode === t.value ? "border-b-2 border-brand text-brand" : "text-ink-muted"
               }`}
             >
               {t.label}
@@ -137,20 +137,20 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
-        <p className="text-sm text-charcoal/60">
+        <p className="text-sm text-ink-muted">
           Existing items (matched by name) get updated; new ones are added, and new categories are created
           automatically. Cost price is skipped for items that already have a recipe — that stays recipe-driven.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           <button
             onClick={() => downloadXlsx(ITEMS_HEADERS, ITEMS_EXAMPLE_ROWS, "Menu items", "menu-items-template.xlsx")}
-            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+            className="flex items-center gap-1.5 text-sm text-brand hover:underline"
           >
             <Download size={14} /> Download Excel template
           </button>
           <button
             onClick={() => downloadCsv(ITEMS_HEADERS, ITEMS_EXAMPLE_ROWS, "menu-items-template.csv")}
-            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+            className="flex items-center gap-1.5 text-sm text-brand hover:underline"
           >
             <Download size={14} /> Download CSV template
           </button>
@@ -166,7 +166,7 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-6 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-6 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {fileName || "Choose a CSV or Excel file"}
@@ -174,16 +174,16 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
         </div>
 
         {rows && !result && (
-          <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">Found {rows.length} row(s).</div>
+          <div className="rounded-lg bg-sunken p-3 text-sm text-ink-muted">Found {rows.length} row(s).</div>
         )}
 
         {result && (
           <div className="space-y-2">
-            <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">
+            <div className="rounded-lg bg-leaf-soft p-3 text-sm text-leaf">
               {result.created} created, {result.updated} updated.
             </div>
             {result.errors.length > 0 && (
-              <div className="rounded-lg bg-maroon/10 p-3 text-xs text-maroon">
+              <div className="rounded-lg bg-danger-soft p-3 text-xs text-danger">
                 {result.errors.map((e, i) => (
                   <p key={i}>
                     {e.row}: {e.message}
@@ -195,15 +195,15 @@ function ItemsImport({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-warm-beige/30 px-5 py-4">
-        <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+        <button onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
           {result ? "Close" : "Cancel"}
         </button>
         {!result && (
           <button
             onClick={handleImport}
             disabled={!rows || rows.length === 0 || importing}
-            className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
           >
             {importing ? "Importing…" : "Import"}
           </button>
@@ -245,7 +245,7 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
-        <p className="text-sm text-charcoal/60">
+        <p className="text-sm text-ink-muted">
           One row per ingredient or component. <code className="text-xs">component_type</code> is{" "}
           <code className="text-xs">ingredient</code> or <code className="text-xs">item</code> (for combos made of
           other menu items). Both the menu item and its components must already exist — import ingredients and menu
@@ -254,13 +254,13 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           <button
             onClick={() => downloadXlsx(RECIPES_HEADERS, RECIPES_EXAMPLE_ROWS, "Recipes", "recipes-template.xlsx")}
-            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+            className="flex items-center gap-1.5 text-sm text-brand hover:underline"
           >
             <Download size={14} /> Download Excel template
           </button>
           <button
             onClick={() => downloadCsv(RECIPES_HEADERS, RECIPES_EXAMPLE_ROWS, "recipes-template.csv")}
-            className="flex items-center gap-1.5 text-sm text-terracotta hover:underline"
+            className="flex items-center gap-1.5 text-sm text-brand hover:underline"
           >
             <Download size={14} /> Download CSV template
           </button>
@@ -276,7 +276,7 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-warm-beige/60 py-6 text-sm text-charcoal/60 hover:border-terracotta hover:text-terracotta"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-control py-6 text-sm text-ink-muted hover:border-brand hover:text-brand"
           >
             <Upload size={16} />
             {fileName || "Choose a CSV or Excel file"}
@@ -284,16 +284,16 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
         </div>
 
         {rows && !result && (
-          <div className="rounded-lg bg-warm-beige/20 p-3 text-sm text-charcoal/70">Found {rows.length} row(s).</div>
+          <div className="rounded-lg bg-sunken p-3 text-sm text-ink-muted">Found {rows.length} row(s).</div>
         )}
 
         {result && (
           <div className="space-y-2">
-            <div className="rounded-lg bg-sage/10 p-3 text-sm text-sage">
+            <div className="rounded-lg bg-leaf-soft p-3 text-sm text-leaf">
               {result.created} created, {result.updated} updated.
             </div>
             {result.errors.length > 0 && (
-              <div className="rounded-lg bg-maroon/10 p-3 text-xs text-maroon">
+              <div className="rounded-lg bg-danger-soft p-3 text-xs text-danger">
                 {result.errors.map((e, i) => (
                   <p key={i}>
                     {e.row}: {e.message}
@@ -305,15 +305,15 @@ function RecipesImport({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-warm-beige/30 px-5 py-4">
-        <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-charcoal/60 hover:bg-cream">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
+        <button onClick={onClose} className="rounded-pill px-5 text-label text-ink-muted hover:bg-sunken">
           {result ? "Close" : "Cancel"}
         </button>
         {!result && (
           <button
             onClick={handleImport}
             disabled={!rows || rows.length === 0 || importing}
-            className="rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
           >
             {importing ? "Importing…" : "Import"}
           </button>

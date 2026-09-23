@@ -22,6 +22,14 @@ enum OrderChannel {
   FOODPANDA
 }
 
+enum StockMovementType {
+  OPENING
+  PURCHASE
+  SALE
+  WASTAGE
+  ADJUSTMENT
+}
+
 enum IngredientCategory {
   FOOD
   PACKAGING
@@ -96,6 +104,7 @@ model Ingredient {
   costPerUnit Float
   category    IngredientCategory @default(FOOD)
   recipeLines RecipeLine[]
+  movements   StockMovement[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
@@ -175,6 +184,7 @@ model Order {
   packagingFeesPaidByCustomer Float?
 
   items     OrderItem[]
+  stockMovements StockMovement[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 }
@@ -198,4 +208,25 @@ model Expense {
   category    ExpenseCategory @default(OTHER)
   date        DateTime        @default(now())
   createdAt   DateTime        @default(now())
+}
+
+/// The single stock ledger: every ingredient/packaging quantity that comes in or goes out.
+/// Stock on hand = sum of quantity (positive = in, negative = out). Sales/wastage rows are
+/// linked to the order that caused them and are rebuilt whenever that order changes.
+model StockMovement {
+  id           String            @id @default(cuid())
+  ingredientId String
+  ingredient   Ingredient        @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  type         StockMovementType
+  quantity     Float
+  /// Price per unit: what was paid (purchases) or the ingredient's cost when used (sales/wastage).
+  unitCost     Float?
+  orderId      String?
+  order        Order?            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  date         DateTime          @default(now())
+  note         String?
+  createdAt    DateTime          @default(now())
+
+  @@index([ingredientId, date])
+  @@index([orderId])
 }
