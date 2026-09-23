@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveCustomer } from "@/lib/customer";
+import { assertStockCovers, applyStockDelta, baseRequirements } from "@/lib/stock";
 
 export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status");
@@ -84,9 +85,6 @@ export async function POST(req: NextRequest) {
         const menuItem = menuItems.find((m) => m.id === line.menuItemId);
         if (!menuItem) throw new Error(`Menu item ${line.menuItemId} not found`);
         if (!menuItem.isAvailable) throw new Error(`${menuItem.name} is currently unavailable`);
-        if (menuItem.stockQty < line.quantity) {
-          throw new Error(`Not enough stock for ${menuItem.name}`);
-        }
         const priceAtSale = line.price != null ? line.price : menuItem.price;
         total += priceAtSale * line.quantity;
         return {
@@ -103,12 +101,10 @@ export async function POST(req: NextRequest) {
       const resolvedAddress = address?.trim() || "";
       const customer = await resolveCustomer(tx, { customerId, name, phone, address });
 
-      for (const line of items) {
-        await tx.menuItem.update({
-          where: { id: line.menuItemId },
-          data: { stockQty: { decrement: line.quantity } },
-        });
-      }
+      // Deals draw down their base items; plain items draw down themselves.
+      const need = await baseRequirements(tx, items);
+      await assertStockCovers(tx, need);
+      await applyStockDelta(tx, need, "take");
 
       return tx.order.create({
         data: {

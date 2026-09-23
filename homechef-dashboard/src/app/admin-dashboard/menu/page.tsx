@@ -8,6 +8,7 @@ import { fetcher } from "@/lib/fetcher";
 import RecipeModal from "./recipe-modal";
 import MenuImportModal from "./import-modal";
 import EditItemModal from "./edit-item-modal";
+import DealModal from "./deal-modal";
 
 interface Category {
   id: string;
@@ -20,6 +21,9 @@ interface MenuItem {
   description: string | null;
   price: number;
   costPrice: number;
+  costIsAuto: boolean;
+  isDeal: boolean;
+  availableQty: number;
   batchYield: number;
   stockQty: number;
   isAvailable: boolean;
@@ -37,6 +41,7 @@ export default function AdminMenuPage() {
   const [recipeItem, setRecipeItem] = useState<MenuItem | null>(null);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [showDeal, setShowDeal] = useState(false);
 
   const [newItem, setNewItem] = useState({ name: "", description: "", price: "", costPrice: "", stockQty: "", categoryName: "" });
   const [adding, setAdding] = useState(false);
@@ -58,8 +63,8 @@ export default function AdminMenuPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         price: Number(draft.price),
-        costPrice: Number(draft.costPrice),
-        stockQty: Number(draft.stockQty),
+        ...(item.costIsAuto ? {} : { costPrice: Number(draft.costPrice) }),
+        ...(item.isDeal ? {} : { stockQty: Number(draft.stockQty) }),
       }),
     });
     await mutate("/api/menu");
@@ -138,12 +143,33 @@ export default function AdminMenuPage() {
           >
             <Upload size={16} /> Import CSV
           </button>
-          <button
-            onClick={() => setShowAdd((s) => !s)}
-            className="flex items-center gap-1.5 rounded-lg bg-terracotta px-3 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
-            <Plus size={16} /> Add item
-          </button>
+          <div className="group relative">
+            <button
+              aria-label="Create menu item or deal"
+              aria-haspopup="menu"
+              className="flex items-center justify-center rounded-lg bg-terracotta p-2 text-white hover:opacity-90"
+            >
+              <Plus size={20} />
+            </button>
+            <div className="invisible absolute right-0 top-full z-20 pt-1 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+              <div role="menu" className="w-44 overflow-hidden rounded-lg border border-warm-beige/60 bg-white py-1 shadow-lg">
+                <button
+                  role="menuitem"
+                  onClick={() => setShowAdd(true)}
+                  className="block w-full px-3 py-2 text-left text-sm text-charcoal/80 hover:bg-cream"
+                >
+                  Create menu item
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => setShowDeal(true)}
+                  className="block w-full px-3 py-2 text-left text-sm text-charcoal/80 hover:bg-cream"
+                >
+                  Create menu deal
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -231,7 +257,14 @@ export default function AdminMenuPage() {
                   return (
                     <tr key={item.id} className={item.isAvailable ? "" : "bg-cream opacity-60"}>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-charcoal">{item.name}</p>
+                        <p className="font-medium text-charcoal">
+                          {item.name}
+                          {item.isDeal && (
+                            <span className="ml-2 rounded-full bg-maroon/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-maroon">
+                              Deal
+                            </span>
+                          )}
+                        </p>
                         {item.description && <p className="text-xs text-charcoal/50">{item.description}</p>}
                       </td>
                       <td className="px-4 py-3">
@@ -249,10 +282,10 @@ export default function AdminMenuPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {item._count.recipeLines > 0 ? (
+                        {item.costIsAuto ? (
                           <div className="flex items-center gap-1">
                             <span className="text-charcoal/70">Rs {item.costPrice.toFixed(0)}</span>
-                            <span className="text-xs text-charcoal/40">from recipe</span>
+                            <span className="text-xs text-charcoal/40">auto</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1">
@@ -270,15 +303,24 @@ export default function AdminMenuPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          value={draft.stockQty}
-                          onChange={(e) =>
-                            setDrafts((d) => ({ ...d, [item.id]: { ...draft, stockQty: e.target.value } }))
-                          }
-                          className="w-20 rounded border border-warm-beige/40 px-2 py-1 text-sm"
-                        />
-                        <span className="ml-1 text-xs text-charcoal/40">in stock</span>
+                        {item.isDeal ? (
+                          <span className="text-charcoal/70">
+                            {item.availableQty}
+                            <span className="ml-1 text-xs text-charcoal/40">can make</span>
+                          </span>
+                        ) : (
+                          <>
+                            <input
+                              type="number"
+                              value={draft.stockQty}
+                              onChange={(e) =>
+                                setDrafts((d) => ({ ...d, [item.id]: { ...draft, stockQty: e.target.value } }))
+                              }
+                              className="w-20 rounded border border-warm-beige/40 px-2 py-1 text-sm"
+                            />
+                            <span className="ml-1 text-xs text-charcoal/40">in stock</span>
+                          </>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <label className="flex items-center gap-2 text-xs text-charcoal/60">
@@ -341,6 +383,7 @@ export default function AdminMenuPage() {
           onClose={() => setRecipeItem(null)}
         />
       )}
+      {showDeal && <DealModal onClose={() => setShowDeal(false)} />}
       {showImport && <MenuImportModal onClose={() => setShowImport(false)} />}
       {editItem && <EditItemModal item={editItem} onClose={() => setEditItem(null)} />}
     </div>

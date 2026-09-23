@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveCustomer } from "@/lib/customer";
+import { assertStockCovers, applyStockDelta, baseRequirements } from "@/lib/stock";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -69,9 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
 
       // Put the old items back in stock, then take the new ones out.
-      for (const old of existing.items) {
-        await tx.menuItem.update({ where: { id: old.menuItemId }, data: { stockQty: { increment: old.quantity } } });
-      }
+      await applyStockDelta(tx, await baseRequirements(tx, existing.items), "restore");
       const oldByMenuItem = new Map(existing.items.map((i) => [i.menuItemId, i]));
       const menuItems = await tx.menuItem.findMany({ where: { id: { in: items.map((i) => i.menuItemId) } } });
 
@@ -81,7 +80,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         if (!menuItem) throw new Error(`Menu item ${line.menuItemId} not found`);
         const previous = oldByMenuItem.get(line.menuItemId);
         if (!previous && !menuItem.isAvailable) throw new Error(`${menuItem.name} is currently unavailable`);
-        if (menuItem.stockQty < line.quantity) throw new Error(`Not enough stock for ${menuItem.name}`);
         const priceAtSale = line.price != null ? line.price : (previous?.priceAtSale ?? menuItem.price);
         subtotal += priceAtSale * line.quantity;
         return {
@@ -95,9 +93,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       });
       if (discount > subtotal) throw new Error("Discount can't exceed the items subtotal");
 
-      for (const line of items) {
-        await tx.menuItem.update({ where: { id: line.menuItemId }, data: { stockQty: { decrement: line.quantity } } });
-      }
+      const need = await baseRequirements(tx, items);
+      await assertStockCovers(tx, need);
+      await applyStockDelta(tx, need, "take");
 
       // Same customer, unchanged phone: keep the link instead of minting a placeholder customer.
       const keepCustomer =

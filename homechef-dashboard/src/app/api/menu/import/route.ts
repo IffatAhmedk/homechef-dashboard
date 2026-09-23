@@ -25,8 +25,6 @@ export async function POST(req: NextRequest) {
 
   const categories = await prisma.category.findMany();
   const menuItems = await prisma.menuItem.findMany();
-  const recipeCounts = await prisma.recipeLine.groupBy({ by: ["menuItemId"], _count: true });
-  const itemsWithRecipes = new Set(recipeCounts.map((r) => r.menuItemId));
 
   for (const row of rows) {
     const categoryName = (row.category ?? "").trim();
@@ -52,16 +50,15 @@ export async function POST(req: NextRequest) {
     const existing = menuItems.find((m) => m.name.toLowerCase() === name.toLowerCase());
 
     if (existing) {
-      const hasRecipe = itemsWithRecipes.has(existing.id);
       await prisma.menuItem.update({
         where: { id: existing.id },
         data: {
           categoryId: category.id,
           description,
           price,
-          stockQty,
           isAvailable,
-          ...(hasRecipe ? {} : { costPrice }),
+          ...(existing.isDeal ? {} : { stockQty }),
+          ...(existing.costIsAuto ? {} : { costPrice }),
         },
       });
       updated++;

@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
  * Recomputes and stores a menu item's costPrice from its recipe lines
  * (ingredients and/or other menu items used as combo components), then
  * cascades to any items that use this one as a combo component.
- * Items with no recipe lines are left untouched (their costPrice stays manual).
+ *
+ * The cost is only taken over from the recipe ("auto") when a recipe exists AND every line has a
+ * price to work from; otherwise the manually entered costPrice is left alone. The result is stored
+ * in MenuItem.costIsAuto so clients never have to work it out themselves.
  */
 export async function recomputeItemCost(menuItemId: string, visited: Set<string> = new Set()): Promise<void> {
   if (visited.has(menuItemId)) return;
@@ -18,7 +21,14 @@ export async function recomputeItemCost(menuItemId: string, visited: Set<string>
     prisma.menuItem.findUnique({ where: { id: menuItemId }, select: { batchYield: true } }),
   ]);
 
-  if (lines.length === 0) return;
+  if (lines.length === 0) {
+    await prisma.menuItem.update({ where: { id: menuItemId }, data: { costIsAuto: false } });
+    return;
+  }
+
+  const allPriced = lines.every((l) =>
+    l.ingredient ? l.ingredient.costPerUnit > 0 : l.componentItem ? l.componentItem.costPrice > 0 : false
+  );
 
   let batchCost = 0;
   let batchPackagingCost = 0;
@@ -40,10 +50,13 @@ export async function recomputeItemCost(menuItemId: string, visited: Set<string>
 
   await prisma.menuItem.update({
     where: { id: menuItemId },
-    data: {
-      costPrice: Math.round(cost * 100) / 100,
-      packagingCostPrice: Math.round(packagingCost * 100) / 100,
-    },
+    data: allPriced
+      ? {
+          costPrice: Math.round(cost * 100) / 100,
+          packagingCostPrice: Math.round(packagingCost * 100) / 100,
+          costIsAuto: true,
+        }
+      : { costIsAuto: false },
   });
 
   const dependents = await prisma.recipeLine.findMany({

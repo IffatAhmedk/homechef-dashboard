@@ -63,6 +63,12 @@ model MenuItem {
   description        String?
   price              Float
   costPrice          Float        @default(0)
+  /// True when costPrice is computed from the recipe (recipe exists and every ingredient/component
+  /// has a price). The server maintains this; when true the cost is not manually editable.
+  costIsAuto         Boolean      @default(false)
+  /// A deal is a bundle of other menu items (its recipe lines are componentItem lines). Selling one
+  /// deducts stock from the base items, not from the deal itself.
+  isDeal             Boolean      @default(false)
   /// How many servings one batch of this recipe's ingredient quantities makes.
   /// Ingredient quantities on the recipe are for the WHOLE batch; cost per
   /// serving = batch cost / batchYield. Default 1 means quantities are

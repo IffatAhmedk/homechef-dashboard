@@ -16,6 +16,9 @@ interface MenuItem {
   description: string | null;
   price: number;
   costPrice: number;
+  costIsAuto: boolean;
+  isDeal: boolean;
+  availableQty: number;
   batchYield: number;
   stockQty: number;
   isAvailable: boolean;
@@ -39,6 +42,7 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
   const [error, setError] = useState<string | null>(null);
 
   const hasRecipe = item._count.recipeLines > 0;
+  const costIsAuto = item.costIsAuto;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,8 +74,9 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
         description: description || null,
         categoryId: category!.id,
         price: Number(price),
-        ...(hasRecipe ? { batchYield: Number(batchYield) || 1 } : { costPrice: Number(costPrice) }),
-        stockQty: Number(stockQty),
+        ...(hasRecipe ? { batchYield: Number(batchYield) || 1 } : {}),
+        ...(costIsAuto ? {} : { costPrice: Number(costPrice) }),
+        ...(item.isDeal ? {} : { stockQty: Number(stockQty) }),
         isAvailable,
       }),
     });
@@ -148,9 +153,9 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-charcoal/50">Cost price</label>
-              {hasRecipe ? (
+              {costIsAuto ? (
                 <div className="flex items-center rounded-lg border border-warm-beige/40 bg-cream px-3 py-2 text-sm text-charcoal/50">
-                  Rs {item.costPrice.toFixed(0)} (from recipe)
+                  Rs {item.costPrice.toFixed(0)} (auto-calculated)
                 </div>
               ) : (
                 <input
@@ -164,7 +169,7 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
             </div>
           </div>
 
-          {hasRecipe && (
+          {hasRecipe && !item.isDeal && (
             <div>
               <label className="mb-1 block text-xs font-medium text-charcoal/50">Batch yield (servings)</label>
               <input
@@ -184,13 +189,19 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
 
           <div>
             <label className="mb-1 block text-xs font-medium text-charcoal/50">Stock quantity</label>
-            <input
-              type="number"
-              min="0"
-              value={stockQty}
-              onChange={(e) => setStockQty(e.target.value)}
-              className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
-            />
+            {item.isDeal ? (
+              <div className="rounded-lg border border-warm-beige/40 bg-cream px-3 py-2 text-sm text-charcoal/50">
+                {item.availableQty} can be made from the items in this deal
+              </div>
+            ) : (
+              <input
+                type="number"
+                min="0"
+                value={stockQty}
+                onChange={(e) => setStockQty(e.target.value)}
+                className="w-full rounded-lg border border-warm-beige/60 px-3 py-2 text-sm"
+              />
+            )}
           </div>
 
           <label className="flex items-center gap-2 text-sm text-charcoal/70">

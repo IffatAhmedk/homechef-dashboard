@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "MenuItem" ADD COLUMN     "costIsAuto" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "isDeal" BOOLEAN NOT NULL DEFAULT false;
