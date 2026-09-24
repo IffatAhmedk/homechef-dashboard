@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
   let foodpandaCut = 0;
   let taxWithheld = 0;
   let foodpandaCharges = 0;
+  const cutParts = { commission: 0, sst: 0, onlinePayment: 0, waitingTime: 0, tax: 0, discountsFunded: 0, notYetInvoiced: 0 };
 
   const dailyMap = new Map<string, { sales: number; cost: number }>();
   for (const day of eachDay({ from, to })) {
@@ -61,6 +62,21 @@ export async function GET(req: NextRequest) {
       foodpandaSales += fin.revenue;
       taxWithheld += (order.salesTaxCollection ?? 0) + (order.incomeTaxWithholding ?? 0) + (order.salesTaxWithholding ?? 0);
       foodpandaCharges += (order.commission ?? 0) + (order.sstOnCommission ?? 0) + (order.onlinePaymentFee ?? 0) + (order.waitingTimeFee ?? 0);
+      if (order.commission != null) {
+        const tax = (order.salesTaxCollection ?? 0) + (order.incomeTaxWithholding ?? 0) + (order.salesTaxWithholding ?? 0);
+        const funded = (order.discountPaidByRestaurant ?? 0) + (order.voucherPaidByRestaurant ?? 0);
+        const parts = (order.commission ?? 0) + (order.sstOnCommission ?? 0) + (order.onlinePaymentFee ?? 0) + (order.waitingTimeFee ?? 0) + tax + funded;
+        cutParts.commission += order.commission ?? 0;
+        cutParts.sst += order.sstOnCommission ?? 0;
+        cutParts.onlinePayment += order.onlinePaymentFee ?? 0;
+        cutParts.waitingTime += order.waitingTimeFee ?? 0;
+        cutParts.tax += tax;
+        cutParts.discountsFunded += funded;
+        // Rounding leftovers between the invoice lines and order amount minus payable.
+        cutParts.notYetInvoiced += Math.abs(fin.platformCut - parts) < 1 ? 0 : fin.platformCut - parts;
+      } else {
+        cutParts.notYetInvoiced += fin.platformCut;
+      }
     } else {
       privateSales += fin.revenue;
     }
@@ -153,6 +169,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
+    cutParts,
     stock,
     from: from.toISOString(),
     to: to.toISOString(),

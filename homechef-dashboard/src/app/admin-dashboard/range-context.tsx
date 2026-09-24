@@ -29,6 +29,17 @@ export interface Analytics {
   daily: { date: string; sales: number; cost: number; profit: number }[];
   profitByItem: ProfitItem[];
   bestSellers: ProfitItem[];
+  foodpandaCut: number;
+  cutParts: {
+    commission: number;
+    sst: number;
+    onlinePayment: number;
+    waitingTime: number;
+    tax: number;
+    discountsFunded: number;
+    notYetInvoiced: number;
+  };
+  expensesByCategory: Record<string, number>;
   stock: { purchased: number; usedInSales: number; wastage: number };
   investment: { spent: number; allTimeProfit: number; paidBackPct: number | null };
 }

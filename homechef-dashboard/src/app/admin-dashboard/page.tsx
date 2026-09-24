@@ -10,6 +10,7 @@ import { Badge, StatCard, btnPrimary, btnSecondary, btnQuiet } from "@/component
 import DateRangeFilter from "./date-range-filter";
 import OrderTable, { OrderRow } from "./order-table";
 import OrderDetailPanel from "./order-detail-panel";
+import ProfitBreakdownPanel from "./profit-breakdown-panel";
 import CsvImportModal from "./csv-import-modal";
 import AddOrderModal from "./add-order-modal";
 import { useAnalytics } from "./range-context";
@@ -26,6 +27,7 @@ export default function AdminDashboardPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showAddOrder, setShowAddOrder] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const { data: orders = [] } = useSWR<OrderRow[]>(`/api/orders?from=${fromISO}&to=${toISO}`, fetcher, {
     refreshInterval: 15000,
@@ -45,7 +47,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-4xl text-ink">Assalam o Alaikum, Ammi</h1>
+          <h1 className="font-heading text-4xl text-ink">Assalam o Alaikum</h1>
           <p className="text-base text-ink-muted">Here is how Rozana is doing {period}.</p>
         </div>
         <DateRangeFilter
@@ -78,14 +80,15 @@ export default function AdminDashboardPage() {
           tone={profitTone}
           icon={profitTone === "good" ? TrendingUp : TrendingDown}
           series={profitSeries}
+          onClick={() => setShowBreakdown(true)}
           hint={
             profitTone === "good" ? (
               <>
-                <ArrowUp size={14} strokeWidth={2.4} /> Profit after all costs
+                <ArrowUp size={14} strokeWidth={2.4} /> Profit after all costs · tap for the breakdown
               </>
             ) : (
               <>
-                <ArrowDown size={14} strokeWidth={2.4} /> Loss after all costs
+                <ArrowDown size={14} strokeWidth={2.4} /> Loss after all costs · tap for the breakdown
               </>
             )
           }
@@ -156,6 +159,7 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
+      {showBreakdown && <ProfitBreakdownPanel analytics={a} periodLabel={period} onClose={() => setShowBreakdown(false)} />}
       <OrderDetailPanel orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
       {showImport && <CsvImportModal onClose={() => setShowImport(false)} />}
       {showAddOrder && <AddOrderModal onClose={() => setShowAddOrder(false)} />}
