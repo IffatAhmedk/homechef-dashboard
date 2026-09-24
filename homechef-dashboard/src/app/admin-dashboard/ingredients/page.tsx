@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { Plus, Trash2, Save, Upload, PackagePlus, History, AlertTriangle } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
+import AddIngredientModal from "./add-modal";
 import IngredientsImportModal from "./import-modal";
 import StockModal, { StockHistoryModal, StockIngredient } from "./stock-modal";
 import { Badge } from "@/components/ui";
@@ -39,14 +40,6 @@ export default function IngredientsPage() {
   const [showImport, setShowImport] = useState(false);
   const [stockFor, setStockFor] = useState<StockIngredient | null>(null);
   const [historyFor, setHistoryFor] = useState<StockIngredient | null>(null);
-  const [newIngredient, setNewIngredient] = useState<{ name: string; unit: string; costPerUnit: string; category: "FOOD" | "PACKAGING" }>({
-    name: "",
-    unit: "",
-    costPerUnit: "",
-    category: "FOOD",
-  });
-  const [adding, setAdding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function saveDraft(ingredient: Ingredient) {
     const draft = drafts[ingredient.id];
@@ -83,31 +76,6 @@ export default function IngredientsPage() {
     await mutate("/api/ingredients");
   }
 
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setAdding(true);
-    const res = await fetch("/api/ingredients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newIngredient.name,
-        unit: newIngredient.unit,
-        costPerUnit: Number(newIngredient.costPerUnit),
-        category: newIngredient.category,
-      }),
-    });
-    if (res.ok) {
-      await mutate("/api/ingredients");
-      setNewIngredient({ name: "", unit: "", costPerUnit: "", category: "FOOD" });
-      setShowAdd(false);
-    } else {
-      const data = await res.json();
-      setError(data.error ?? "Failed to add ingredient");
-    }
-    setAdding(false);
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -125,10 +93,10 @@ export default function IngredientsPage() {
             <Upload size={16} /> Import CSV
           </button>
           <button
-            onClick={() => setShowAdd((s) => !s)}
+            onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90"
           >
-            <Plus size={16} /> Add ingredient
+            <Plus size={16} strokeWidth={2.4} /> Add
           </button>
         </div>
       </div>
@@ -162,51 +130,6 @@ export default function IngredientsPage() {
           </section>
         );
       })()}
-
-      {showAdd && (
-        <form onSubmit={handleAdd} className="grid grid-cols-1 gap-3 rounded-lg border border-brand bg-sunken p-4 sm:grid-cols-4">
-          <input
-            required
-            placeholder="Name (e.g. Flour)"
-            value={newIngredient.name}
-            onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
-            className="rounded-sm border border-control px-3 py-2 text-sm sm:col-span-2"
-          />
-          <input
-            required
-            placeholder="Unit (e.g. g, ml, piece)"
-            value={newIngredient.unit}
-            onChange={(e) => setNewIngredient({ ...newIngredient, unit: e.target.value })}
-            className="rounded-sm border border-control px-3 py-2 text-sm"
-          />
-          <input
-            required
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Cost per unit"
-            value={newIngredient.costPerUnit}
-            onChange={(e) => setNewIngredient({ ...newIngredient, costPerUnit: e.target.value })}
-            className="rounded-sm border border-control px-3 py-2 text-sm"
-          />
-          <select
-            value={newIngredient.category}
-            onChange={(e) => setNewIngredient({ ...newIngredient, category: e.target.value as "FOOD" | "PACKAGING" })}
-            className="rounded-sm border border-control px-3 py-2 text-sm"
-          >
-            <option value="FOOD">Food</option>
-            <option value="PACKAGING">Packaging</option>
-          </select>
-          {error && <p className="text-sm text-danger sm:col-span-4">{error}</p>}
-          <button
-            type="submit"
-            disabled={adding}
-            className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50 sm:col-span-4"
-          >
-            {adding ? "Adding…" : "Add ingredient"}
-          </button>
-        </form>
-      )}
 
       <div className="overflow-x-auto rounded-lg border border-line bg-card">
         <table className="w-full text-sm">
@@ -299,6 +222,7 @@ export default function IngredientsPage() {
         </table>
         {ingredients.length === 0 && <p className="p-6 text-center text-sm text-ink-muted">No ingredients yet.</p>}
       </div>
+      {showAdd && <AddIngredientModal onClose={() => setShowAdd(false)} />}
       {stockFor && <StockModal ingredient={stockFor} onClose={() => setStockFor(null)} />}
       {historyFor && <StockHistoryModal ingredient={historyFor} onClose={() => setHistoryFor(null)} />}
       {showImport && <IngredientsImportModal onClose={() => setShowImport(false)} />}

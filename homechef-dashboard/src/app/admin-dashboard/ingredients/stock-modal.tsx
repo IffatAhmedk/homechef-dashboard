@@ -4,8 +4,9 @@ import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { X } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { btnPrimary } from "@/components/ui";
+import PurchaseFields, { PurchaseValues, buyUnitsFor, purchaseInBase, todayISO } from "./purchase-fields";
 
 export interface StockIngredient {
   id: string;
@@ -24,11 +25,6 @@ const MODES: { value: Mode; label: string }[] = [
   { value: "WASTAGE", label: "Wasted or spoiled" },
 ];
 
-function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function qty(n: number) {
   return Number(n.toFixed(2)).toLocaleString("en-PK");
 }
@@ -36,9 +32,14 @@ function qty(n: number) {
 export default function StockModal({ ingredient, onClose }: { ingredient: StockIngredient; onClose: () => void }) {
   const [mode, setMode] = useState<Mode>(ingredient.tracked ? "PURCHASE" : "COUNT");
   const [quantity, setQuantity] = useState("");
-  const [totalCost, setTotalCost] = useState("");
+  const [purchase, setPurchase] = useState<PurchaseValues>({
+    quantity: "",
+    buyUnit: buyUnitsFor(ingredient.unit)[0].value,
+    price: "",
+    date: todayISO(),
+  });
   const [unitCost, setUnitCost] = useState("");
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,15 +48,16 @@ export default function StockModal({ ingredient, onClose }: { ingredient: StockI
     e.preventDefault();
     setError(null);
     setSaving(true);
+    const bought = purchaseInBase(ingredient.unit, purchase);
     const res = await fetch(`/api/ingredients/${ingredient.id}/stock`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: mode,
-        quantity: Number(quantity),
-        totalCost: mode === "PURCHASE" ? Number(totalCost) : undefined,
+        quantity: mode === "PURCHASE" ? bought.quantity : Number(quantity),
+        totalCost: mode === "PURCHASE" ? bought.total : undefined,
         unitCost: mode === "COUNT" && unitCost !== "" ? Number(unitCost) : undefined,
-        date: mode === "COUNT" ? undefined : date,
+        date: mode === "PURCHASE" ? purchase.date : mode === "COUNT" ? undefined : date,
         note: note || undefined,
       }),
     });
@@ -70,12 +72,13 @@ export default function StockModal({ ingredient, onClose }: { ingredient: StockI
     onClose();
   }
 
-  const paidPerUnit = mode === "PURCHASE" && Number(quantity) > 0 && Number(totalCost) > 0 ? Number(totalCost) / Number(quantity) : null;
+  const bought = purchaseInBase(ingredient.unit, purchase);
+  const paidPerUnit = mode === "PURCHASE" ? bought.unitPrice : null;
+  const onHand = Math.max(0, ingredient.stockQty);
   const blended =
     paidPerUnit != null
-      ? Math.max(0, ingredient.stockQty) > 0
-        ? (Math.max(0, ingredient.stockQty) * ingredient.costPerUnit + Number(quantity) * paidPerUnit) /
-          (Math.max(0, ingredient.stockQty) + Number(quantity))
+      ? onHand > 0
+        ? (onHand * ingredient.costPerUnit + bought.quantity * paidPerUnit) / (onHand + bought.quantity)
         : paidPerUnit
       : null;
 
@@ -114,23 +117,20 @@ export default function StockModal({ ingredient, onClose }: { ingredient: StockI
             ))}
           </div>
 
-          <label className="block text-label font-bold text-ink-muted">
-            {mode === "PURCHASE" ? `How much did you buy? (${ingredient.unit})` : mode === "COUNT" ? `How much do you have now? (${ingredient.unit})` : `How much was lost? (${ingredient.unit})`}
-            <input
-              required
-              type="number"
-              min="0"
-              step="any"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className="mt-1 w-full"
-            />
-          </label>
-
-          {mode === "PURCHASE" && (
+          {mode === "PURCHASE" ? (
+            <PurchaseFields unit={ingredient.unit} values={purchase} onChange={setPurchase} />
+          ) : (
             <label className="block text-label font-bold text-ink-muted">
-              Total paid (Rs)
-              <input required type="number" min="0" step="any" value={totalCost} onChange={(e) => setTotalCost(e.target.value)} className="mt-1 w-full" />
+              {mode === "COUNT" ? `How much do you have now? (${ingredient.unit})` : `How much was lost? (${ingredient.unit})`}
+              <input
+                required
+                type="number"
+                min="0"
+                step="any"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="mt-1 w-full"
+              />
             </label>
           )}
 
@@ -141,7 +141,7 @@ export default function StockModal({ ingredient, onClose }: { ingredient: StockI
             </label>
           )}
 
-          {mode !== "COUNT" && (
+          {mode === "WASTAGE" && (
             <label className="block text-label font-bold text-ink-muted">
               Date
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 w-full" />
@@ -155,10 +155,9 @@ export default function StockModal({ ingredient, onClose }: { ingredient: StockI
 
           {mode === "PURCHASE" && paidPerUnit != null && blended != null && (
             <p className="rounded-sm bg-sunken p-3 text-base text-ink">
-              You paid {formatCurrency(paidPerUnit)} per {ingredient.unit}.
               {ingredient.stockQty > 0
-                ? ` With the ${qty(ingredient.stockQty)} ${ingredient.unit} you already have (at ${ingredient.costPerUnit.toFixed(2)}), the average price becomes ${blended.toFixed(2)} per ${ingredient.unit}.`
-                : ` The price will be set to ${blended.toFixed(2)} per ${ingredient.unit}.`}
+                ? `With the ${qty(ingredient.stockQty)} ${ingredient.unit} you already have (at ${ingredient.costPerUnit.toFixed(2)}), the average price becomes ${blended.toFixed(2)} per ${ingredient.unit}.`
+                : `The price will be set to ${blended.toFixed(2)} per ${ingredient.unit}.`}
             </p>
           )}
           {mode === "COUNT" && ingredient.tracked && quantity !== "" && (

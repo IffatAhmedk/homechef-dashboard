@@ -67,6 +67,7 @@ export function StatCard({
   format = "money",
   icon: Icon,
   series,
+  onClick,
 }: {
   label: string;
   value: number;
@@ -76,12 +77,28 @@ export function StatCard({
   format?: "money" | "count" | "percent";
   icon?: LucideIcon;
   series?: { date: string; value: number }[];
+  onClick?: () => void;
 }) {
   const compact = size === "small";
   const color = TONE_COLOR[tone];
   const gradientId = `spark-${label.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
   return (
-    <div className={`overflow-hidden rounded-lg shadow-card ${TONE_CARD[tone]}`}>
+    <div
+      className={`overflow-hidden rounded-lg shadow-card ${TONE_CARD[tone]} ${onClick ? "cursor-pointer transition hover:ring-2 hover:ring-brand" : ""}`}
+      {...(onClick
+        ? {
+            role: "button",
+            tabIndex: 0,
+            onClick,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            },
+          }
+        : {})}
+    >
       <div className={compact ? "p-4" : "p-5 pb-2"}>
         <div className="flex items-center justify-between gap-2">
           <p className="text-label font-bold text-ink-muted">{label}</p>
