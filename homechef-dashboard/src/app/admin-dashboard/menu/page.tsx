@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR, { mutate } from "swr";
-import { Plus, Trash2, Save, Printer, ChefHat, Upload, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, Printer, ChefHat, Upload, Pencil, ChevronDown, ChevronRight } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import RecipeModal from "./recipe-modal";
 import MenuImportModal from "./import-modal";
@@ -11,7 +11,8 @@ import EditItemModal from "./edit-item-modal";
 import { MenuProfitBars } from "@/components/ui";
 import DateRangeFilter from "../date-range-filter";
 import { useAnalytics } from "../range-context";
-import DealModal from "./deal-modal";
+import DealModal, { EditableDeal } from "./deal-modal";
+import { useDialogs } from "@/components/dialogs";
 
 interface Category {
   id: string;
@@ -46,6 +47,44 @@ export default function AdminMenuPage() {
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showDeal, setShowDeal] = useState(false);
+  const [editDeal, setEditDeal] = useState<EditableDeal | null>(null);
+  const [profitOpen, setProfitOpen] = useState(true);
+  const { confirm, notify } = useDialogs();
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (localStorage.getItem("rozana-profit-by-item-open") === "0") setProfitOpen(false);
+    } catch {}
+  }, []);
+
+  function toggleProfit() {
+    setProfitOpen((open) => {
+      try {
+        localStorage.setItem("rozana-profit-by-item-open", open ? "0" : "1");
+      } catch {}
+      return !open;
+    });
+  }
+
+  async function openEditor(item: MenuItem) {
+    if (!item.isDeal) {
+      setEditItem(item);
+      return;
+    }
+    const res = await fetch(`/api/menu/${item.id}/recipe`);
+    const lines: { componentItemId: string | null; quantity: number }[] = res.ok ? await res.json() : [];
+    setEditDeal({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      categoryName: item.category.name,
+      price: item.price,
+      costPrice: item.costPrice,
+      costIsAuto: item.costIsAuto,
+      components: Object.fromEntries(lines.filter((l) => l.componentItemId).map((l) => [l.componentItemId as string, String(l.quantity)])),
+    });
+  }
 
   const [newItem, setNewItem] = useState({ name: "", description: "", price: "", costPrice: "", stockQty: "", categoryName: "" });
   const [adding, setAdding] = useState(false);
@@ -75,10 +114,38 @@ export default function AdminMenuPage() {
     setSavingId(null);
   }
 
-  async function deleteItem(id: string) {
-    if (!confirm("Delete this menu item?")) return;
-    await fetch(`/api/menu/${id}`, { method: "DELETE" });
-    await mutate("/api/menu");
+  async function deleteItem(item: MenuItem) {
+    const ok = await confirm({
+      title: `Delete ${item.name}?`,
+      message: item.isDeal ? "The deal is removed. The items inside it stay on your menu." : "This removes it from your menu for good.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
+
+    const res = await fetch(`/api/menu/${item.id}`, { method: "DELETE" });
+    if (res.ok) {
+      await mutate("/api/menu");
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    if (data.reason === "orders") {
+      const hide = await confirm({
+        title: `${item.name} can't be deleted`,
+        message: `${data.error} Hide it from the menu instead? Your past orders and profit stay exactly as they are.`,
+        confirmLabel: "Hide it",
+      });
+      if (hide) {
+        await fetch(`/api/menu/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isAvailable: false }),
+        });
+        await mutate("/api/menu");
+      }
+      return;
+    }
+    await notify({ title: `${item.name} can't be deleted`, message: data.error ?? "Something went wrong. Try again." });
   }
 
   async function handleAddItem(e: React.FormEvent) {
@@ -242,16 +309,31 @@ export default function AdminMenuPage() {
 
       <section className="space-y-3 rounded-lg bg-card p-5 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-heading text-xl text-ink">Profit by menu item</h2>
-          <DateRangeFilter
-            preset={preset}
-            customFrom={customFrom}
-            customTo={customTo}
-            onPresetChange={setPreset}
-            onCustomChange={setCustom}
-          />
+          <button
+            onClick={toggleProfit}
+            aria-expanded={profitOpen}
+            aria-controls="profit-by-item-body"
+            className="flex items-center gap-2 rounded-pill px-2 font-heading text-xl text-ink hover:bg-sunken"
+          >
+            {profitOpen ? <ChevronDown size={20} strokeWidth={2.4} /> : <ChevronRight size={20} strokeWidth={2.4} />}
+            Profit by menu item
+            <span className="text-label font-bold text-brand">{profitOpen ? "Hide" : "Show"}</span>
+          </button>
+          {profitOpen && (
+            <DateRangeFilter
+              preset={preset}
+              customFrom={customFrom}
+              customTo={customTo}
+              onPresetChange={setPreset}
+              onCustomChange={setCustom}
+            />
+          )}
         </div>
-        <MenuProfitBars rows={analytics?.profitByItem ?? []} />
+        {profitOpen && (
+          <div id="profit-by-item-body">
+            <MenuProfitBars rows={analytics?.profitByItem ?? []} />
+          </div>
+        )}
       </section>
 
       {grouped.map(({ category, items: catItems }) =>
@@ -363,19 +445,19 @@ export default function AdminMenuPage() {
                             </button>
                           )}
                           <button
-                            onClick={() => setEditItem(item)}
+                            onClick={() => openEditor(item)}
                             className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-brand hover:bg-brand-soft"
                           >
                             <Pencil size={16} strokeWidth={2.4} /> Edit
                           </button>
-                          <button
+                          {!item.isDeal && (<button
                             onClick={() => setRecipeItem(item)}
                             className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-brand hover:bg-brand-soft"
                           >
                             <ChefHat size={16} strokeWidth={2.4} /> Recipe
-                          </button>
+                          </button>)}
                           <button
-                            onClick={() => deleteItem(item.id)}
+                            onClick={() => deleteItem(item)}
                             className="flex items-center gap-1 rounded-pill px-3 text-label font-bold text-danger hover:bg-danger-soft"
                           >
                             <Trash2 size={16} strokeWidth={2.4} /> Delete
@@ -400,6 +482,7 @@ export default function AdminMenuPage() {
         />
       )}
       {showDeal && <DealModal onClose={() => setShowDeal(false)} />}
+      {editDeal && <DealModal deal={editDeal} onClose={() => setEditDeal(null)} />}
       {showImport && <MenuImportModal onClose={() => setShowImport(false)} />}
       {editItem && <EditItemModal item={editItem} onClose={() => setEditItem(null)} />}
     </div>

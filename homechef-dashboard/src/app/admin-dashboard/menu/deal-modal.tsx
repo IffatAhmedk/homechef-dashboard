@@ -18,16 +18,28 @@ interface BaseItem {
   category: Category;
 }
 
-export default function DealModal({ onClose }: { onClose: () => void }) {
+export interface EditableDeal {
+  id: string;
+  name: string;
+  description: string | null;
+  categoryName: string;
+  price: number;
+  costPrice: number;
+  costIsAuto: boolean;
+  components: Record<string, string>;
+}
+
+export default function DealModal({ onClose, deal }: { onClose: () => void; deal?: EditableDeal }) {
   const { data: items = [] } = useSWR<BaseItem[]>("/api/menu", fetcher);
   const { data: categories = [] } = useSWR<Category[]>("/api/categories", fetcher);
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryName, setCategoryName] = useState("Deals");
-  const [price, setPrice] = useState("");
-  const [costPrice, setCostPrice] = useState("");
-  const [picked, setPicked] = useState<Record<string, string>>({});
+  const isEdit = !!deal;
+  const [name, setName] = useState(deal?.name ?? "");
+  const [description, setDescription] = useState(deal?.description ?? "");
+  const [categoryName, setCategoryName] = useState(deal?.categoryName ?? "Deals");
+  const [price, setPrice] = useState(deal ? String(deal.price) : "");
+  const [costPrice, setCostPrice] = useState(deal && !deal.costIsAuto ? String(deal.costPrice) : "");
+  const [picked, setPicked] = useState<Record<string, string>>(deal?.components ?? {});
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,25 +87,37 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
       await mutate("/api/categories");
     }
 
-    const res = await fetch("/api/menu", {
-      method: "POST",
+    const componentList = Object.entries(picked).map(([menuItemId, quantity]) => ({
+      menuItemId,
+      quantity: Number(quantity) || 1,
+    }));
+    const res = await fetch(isEdit ? `/api/menu/${deal.id}` : "/api/menu", {
+      method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        description: description || undefined,
-        price: Number(price),
-        costPrice: costPrice !== "" ? Number(costPrice) : undefined,
-        categoryId: category!.id,
-        isDeal: true,
-        components: Object.entries(picked).map(([menuItemId, quantity]) => ({
-          menuItemId,
-          quantity: Number(quantity) || 1,
-        })),
-      }),
+      body: JSON.stringify(
+        isEdit
+          ? {
+              name,
+              description: description || null,
+              price: Number(price),
+              categoryId: category!.id,
+              components: componentList,
+              ...(deal.costIsAuto ? {} : costPrice !== "" ? { costPrice: Number(costPrice) } : {}),
+            }
+          : {
+              name,
+              description: description || undefined,
+              price: Number(price),
+              costPrice: costPrice !== "" ? Number(costPrice) : undefined,
+              categoryId: category!.id,
+              isDeal: true,
+              components: componentList,
+            }
+      ),
     });
     setSaving(false);
     if (!res.ok) {
-      setError((await res.json()).error ?? "Failed to create deal");
+      setError((await res.json()).error ?? "Could not save the deal");
       return;
     }
     await mutate("/api/menu");
@@ -105,7 +129,7 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
       <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-card shadow-xl">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h2 className="font-heading text-2xl text-ink">Create menu deal</h2>
+          <h2 className="font-heading text-2xl text-ink">{isEdit ? "Edit deal" : "Create menu deal"}</h2>
           <button onClick={onClose} className="flex items-center gap-1 rounded-pill px-5 text-label font-bold text-ink hover:bg-sunken">
             <X size={18} strokeWidth={2.4} /> Close
           </button>
@@ -228,7 +252,7 @@ export default function DealModal({ onClose }: { onClose: () => void }) {
               disabled={saving}
               className="rounded-pill bg-brand px-5 text-label font-bold text-on-brand hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Creating…" : "Create deal"}
+              {saving ? "Saving…" : isEdit ? "Save changes" : "Create deal"}
             </button>
           </div>
         </form>
