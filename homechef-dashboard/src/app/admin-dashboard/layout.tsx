@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { DateRangeProvider } from "./range-context";
+import { DialogProvider } from "@/components/dialogs";
 
 const NAV = [
   { href: "/admin-dashboard", label: "Overview", icon: LayoutDashboard },
@@ -47,6 +48,7 @@ export default function AdminLayout({ children }: LayoutProps<"/admin-dashboard"
   }
 
   return (
+    <DialogProvider>
     <DateRangeProvider>
       <div className="min-h-screen bg-ground lg:flex">
         <aside
@@ -92,5 +94,6 @@ export default function AdminLayout({ children }: LayoutProps<"/admin-dashboard"
         <main className="min-w-0 flex-1 p-4 sm:p-6">{children}</main>
       </div>
     </DateRangeProvider>
+    </DialogProvider>
   );
 }
