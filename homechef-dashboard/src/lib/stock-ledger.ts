@@ -10,6 +10,7 @@ const USAGE_WINDOW_DAYS = 14;
 export interface IngredientStock {
   stockQty: number;
   tracked: boolean;
+  trackedSince: Date | null;
   avgDailyUse: number;
   daysLeft: number | null;
 }
@@ -43,6 +44,7 @@ export async function ingredientStockLevels(db: Db = prisma): Promise<Map<string
     result.set(t.ingredientId, {
       stockQty,
       tracked: start != null,
+      trackedSince: start,
       avgDailyUse,
       daysLeft: avgDailyUse > 0 ? Math.max(0, stockQty) / avgDailyUse : null,
     });
@@ -73,6 +75,7 @@ export async function recordStockEntry(ingredientId: string, entry: StockEntry) 
     const date = entry.date ?? new Date();
     const note = entry.note?.trim() || null;
     let priceChanged = false;
+    let backfillFrom: Date | null = null;
 
     if (entry.type === "PURCHASE") {
       if (!(entry.quantity > 0)) throw new Error("Quantity bought must be above 0");
@@ -85,6 +88,7 @@ export async function recordStockEntry(ingredientId: string, entry: StockEntry) 
       });
       await tx.ingredient.update({ where: { id: ingredientId }, data: { costPerUnit: Math.round(blended * 10000) / 10000 } });
       priceChanged = true;
+      if (!level?.trackedSince || date < level.trackedSince) backfillFrom = date;
     } else if (entry.type === "WASTAGE") {
       if (!(entry.quantity > 0)) throw new Error("Quantity wasted must be above 0");
       if (!tracked) throw new Error("Set the stock you have first, then you can log wastage");
@@ -110,10 +114,15 @@ export async function recordStockEntry(ingredientId: string, entry: StockEntry) 
         }
       }
     }
-    return { priceChanged };
+    return { priceChanged, backfillFrom };
   });
 
   if (result.priceChanged) await recomputeItemsUsingIngredient(ingredientId);
+  if (result.backfillFrom) {
+    // Something bought before we started tracking: take out what the orders since then used.
+    const orders = await prisma.order.findMany({ where: { createdAt: { gte: result.backfillFrom } }, select: { id: true } });
+    await syncOrdersStock(prisma, orders.map((o) => o.id));
+  }
 }
 
 interface RecipeNode {

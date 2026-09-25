@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
-import { Plus, Trash2, Save, Upload, PackagePlus, History, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Save, Upload, PackagePlus, History, AlertTriangle, Pencil } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import AddIngredientModal from "./add-modal";
+import EditIngredientModal from "./edit-modal";
 import IngredientsImportModal from "./import-modal";
 import StockModal, { StockHistoryModal, StockIngredient } from "./stock-modal";
 import { Badge } from "@/components/ui";
+import { useDialogs } from "@/components/dialogs";
 
 interface Ingredient {
   id: string;
@@ -34,12 +36,14 @@ function lasts(ing: Ingredient) {
 
 export default function IngredientsPage() {
   const { data: ingredients = [] } = useSWR<Ingredient[]>("/api/ingredients", fetcher);
+  const { confirm, notify } = useDialogs();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [stockFor, setStockFor] = useState<StockIngredient | null>(null);
   const [historyFor, setHistoryFor] = useState<StockIngredient | null>(null);
+  const [editing, setEditing] = useState<Ingredient | null>(null);
 
   async function saveDraft(ingredient: Ingredient) {
     const draft = drafts[ingredient.id];
@@ -66,11 +70,18 @@ export default function IngredientsPage() {
   }
 
   async function deleteIngredient(id: string) {
-    if (!confirm("Delete this ingredient?")) return;
+    const ing = ingredients.find((i) => i.id === id);
+    const ok = await confirm({
+      title: `Delete ${ing?.name ?? "this ingredient"}?`,
+      message: "Its stock history goes with it. This can't be undone.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
     const res = await fetch(`/api/ingredients/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json();
-      alert(data.error);
+      await notify({ title: "Can't delete it", message: data.error });
       return;
     }
     await mutate("/api/ingredients");
@@ -196,6 +207,12 @@ export default function IngredientsPage() {
                         </button>
                       )}
                       <button
+                        onClick={() => setEditing(ing)}
+                        className="flex items-center gap-1 rounded-pill px-3 text-label font-bold text-brand hover:bg-brand-soft"
+                      >
+                        <Pencil size={16} strokeWidth={2.4} /> Edit
+                      </button>
+                      <button
                         onClick={() => setStockFor(ing)}
                         className="flex items-center gap-1 rounded-pill px-3 text-label font-bold text-brand hover:bg-brand-soft"
                       >
@@ -222,6 +239,7 @@ export default function IngredientsPage() {
         </table>
         {ingredients.length === 0 && <p className="p-6 text-center text-sm text-ink-muted">No ingredients yet.</p>}
       </div>
+      {editing && <EditIngredientModal ingredient={editing} onClose={() => setEditing(null)} />}
       {showAdd && <AddIngredientModal onClose={() => setShowAdd(false)} />}
       {stockFor && <StockModal ingredient={stockFor} onClose={() => setStockFor(null)} />}
       {historyFor && <StockHistoryModal ingredient={historyFor} onClose={() => setHistoryFor(null)} />}

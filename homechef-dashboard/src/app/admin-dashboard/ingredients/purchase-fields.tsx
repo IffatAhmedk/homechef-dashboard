@@ -129,9 +129,15 @@ export default function PurchaseFields({
       </div>
 
       <label className="block text-label font-bold text-ink-muted">
-        Date
-        <input type="date" value={values.date} onChange={(e) => set({ date: e.target.value })} className="mt-1 w-full" />
+        Date bought
+        <input type="date" value={values.date} max={todayISO()} onChange={(e) => set({ date: e.target.value })} className="mt-1 w-full" />
       </label>
+      {values.date && values.date < todayISO() && (
+        <p className="rounded-sm bg-warn-soft px-4 py-3 text-base text-warn">
+          Bought earlier and not logged? That works. Orders since {values.date} will be taken out of this stock
+          automatically, so what you see is what should be left today.
+        </p>
+      )}
     </div>
   );
 }

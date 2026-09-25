@@ -13,6 +13,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json(movements);
 }
 
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const movementId = req.nextUrl.searchParams.get("movementId");
+  if (!movementId) return NextResponse.json({ error: "movementId is required" }, { status: 400 });
+
+  const movement = await prisma.stockMovement.findFirst({ where: { id: movementId, ingredientId: id } });
+  if (!movement) return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  if (movement.orderId) {
+    return NextResponse.json({ error: "This came from an order — change the order instead" }, { status: 400 });
+  }
+  await prisma.stockMovement.delete({ where: { id: movementId } });
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();

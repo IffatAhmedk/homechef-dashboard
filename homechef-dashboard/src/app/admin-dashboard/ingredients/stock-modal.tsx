@@ -5,6 +5,7 @@ import useSWR, { mutate } from "swr";
 import { X } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { formatDate } from "@/lib/format";
+import { useDialogs } from "@/components/dialogs";
 import { btnPrimary } from "@/components/ui";
 import PurchaseFields, { PurchaseValues, buyUnitsFor, purchaseInBase, todayISO } from "./purchase-fields";
 
@@ -201,7 +202,26 @@ const TYPE_LABEL: Record<Movement["type"], string> = {
 };
 
 export function StockHistoryModal({ ingredient, onClose }: { ingredient: StockIngredient; onClose: () => void }) {
-  const { data: movements } = useSWR<Movement[]>(`/api/ingredients/${ingredient.id}/stock`, fetcher);
+  const { confirm, notify } = useDialogs();
+  const key = `/api/ingredients/${ingredient.id}/stock`;
+  const { data: movements } = useSWR<Movement[]>(key, fetcher);
+
+  async function remove(m: Movement) {
+    const ok = await confirm({
+      title: `Remove this ${TYPE_LABEL[m.type].toLowerCase()} entry?`,
+      message: "Stock goes back to what it was without it.",
+      confirmLabel: "Remove",
+      tone: "danger",
+    });
+    if (!ok) return;
+    const res = await fetch(`${key}?movementId=${m.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      await notify({ title: "Can't remove it", message: (await res.json()).error ?? "Something went wrong" });
+      return;
+    }
+    await mutate(key);
+    await mutate("/api/ingredients");
+  }
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink/40" onClick={onClose} />
@@ -220,6 +240,7 @@ export function StockHistoryModal({ ingredient, onClose }: { ingredient: StockIn
                 <th className="px-4 py-2">What</th>
                 <th className="px-4 py-2 text-right">Amount</th>
                 <th className="px-4 py-2 text-right">Price each</th>
+                <th className="px-4 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -239,6 +260,13 @@ export function StockHistoryModal({ ingredient, onClose }: { ingredient: StockIn
                     {qty(Math.abs(m.quantity))} {ingredient.unit}
                   </td>
                   <td className="px-4 py-2 text-right text-ink-muted">{m.unitCost != null ? m.unitCost.toFixed(2) : "—"}</td>
+                  <td className="px-4 py-2 text-right">
+                    {!m.order && (
+                      <button onClick={() => remove(m)} className="rounded-pill px-3 text-label font-bold text-danger hover:bg-danger-soft">
+                        Remove
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

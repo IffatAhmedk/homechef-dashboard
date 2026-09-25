@@ -6,15 +6,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const { name, unit, costPerUnit, category } = await req.json();
 
-  const ingredient = await prisma.ingredient.update({
-    where: { id },
-    data: {
-      ...(name !== undefined && { name }),
-      ...(unit !== undefined && { unit }),
-      ...(costPerUnit !== undefined && { costPerUnit: Number(costPerUnit) }),
-      ...(category !== undefined && { category }),
-    },
-  });
+  if (unit !== undefined) {
+    const current = await prisma.ingredient.findUnique({
+      where: { id },
+      select: { unit: true, _count: { select: { movements: true, recipeLines: true } } },
+    });
+    if (current && current.unit !== unit && (current._count.movements > 0 || current._count.recipeLines > 0)) {
+      return NextResponse.json(
+        { error: "The unit can't change once stock is logged or a recipe uses it — quantities wouldn't convert." },
+        { status: 400 }
+      );
+    }
+  }
+
+  const ingredient = await prisma.ingredient
+    .update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(unit !== undefined && { unit }),
+        ...(costPerUnit !== undefined && { costPerUnit: Number(costPerUnit) }),
+        ...(category !== undefined && { category }),
+      },
+    })
+    .catch((err: { code?: string }) => {
+      if (err.code === "P2002") return null;
+      throw err;
+    });
+  if (!ingredient) {
+    return NextResponse.json({ error: "There is already an ingredient with that name" }, { status: 400 });
+  }
 
   if (costPerUnit !== undefined || category !== undefined) {
     await recomputeItemsUsingIngredient(id);
