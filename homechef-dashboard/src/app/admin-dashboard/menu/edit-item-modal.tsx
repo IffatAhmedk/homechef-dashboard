@@ -35,13 +35,11 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
   const [categoryName, setCategoryName] = useState(item.category.name);
   const [price, setPrice] = useState(String(item.price));
   const [costPrice, setCostPrice] = useState(String(item.costPrice));
-  const [batchYield, setBatchYield] = useState(String(item.batchYield));
   const [stockQty, setStockQty] = useState(String(item.stockQty));
   const [isAvailable, setIsAvailable] = useState(item.isAvailable);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasRecipe = item._count.recipeLines > 0;
   const costIsAuto = item.costIsAuto;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -74,7 +72,6 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
         description: description || null,
         categoryId: category!.id,
         price: Number(price),
-        ...(hasRecipe ? { batchYield: Number(batchYield) || 1 } : {}),
         ...(costIsAuto ? {} : { costPrice: Number(costPrice) }),
         ...(item.isDeal ? {} : { stockQty: Number(stockQty) }),
         isAvailable,
@@ -168,24 +165,6 @@ export default function EditItemModal({ item, onClose }: { item: MenuItem; onClo
               )}
             </div>
           </div>
-
-          {hasRecipe && !item.isDeal && (
-            <div>
-              <label className="mb-1 block text-xs font-bold text-ink-muted">Batch yield (servings)</label>
-              <input
-                type="number"
-                min="1"
-                value={batchYield}
-                onChange={(e) => setBatchYield(e.target.value)}
-                className="w-full rounded-sm border border-control px-3 py-2 text-sm"
-              />
-              <p className="mt-1 text-xs text-ink-muted">
-                If the recipe&apos;s ingredient quantities are for a whole batch (e.g. a dough that makes 20
-                parathas), set this to how many servings that batch yields. Leave at 1 if quantities are already
-                per serving.
-              </p>
-            </div>
-          )}
 
           <div>
             <label className="mb-1 block text-xs font-bold text-ink-muted">Stock quantity</label>

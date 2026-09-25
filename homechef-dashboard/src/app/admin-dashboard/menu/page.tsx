@@ -478,6 +478,7 @@ export default function AdminMenuPage() {
         <RecipeModal
           menuItemId={recipeItem.id}
           menuItemName={recipeItem.name}
+          batchYield={recipeItem.batchYield}
           onClose={() => setRecipeItem(null)}
         />
       )}
