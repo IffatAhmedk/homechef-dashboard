@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /* Rozana design system tokens — light (cream) by default, dark (evening) follows the system setting. */
 :root {
@@ -57,6 +59,25 @@
 }
 
 @theme inline {
+  /* shadcn/ui's colour names, pointed at the Rozana palette */
+  --color-background: var(--surface-ground);
+  --color-foreground: var(--ink);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface-card);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--on-brand);
+  --color-secondary: var(--surface-sunken);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-sunken);
+  --color-muted-foreground: var(--ink-muted);
+  --color-accent: var(--surface-sunken);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--control-border);
+  --color-ring: var(--brand);
+
   --color-ground: var(--surface-ground);
   --color-card: var(--surface-card);
   --color-sunken: var(--surface-sunken);
@@ -152,44 +173,12 @@ body {
   outline-offset: 2px;
 }
 
-/* Every clickable thing is at least 40px tall. */
-button,
-select,
-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
-summary {
-  min-height: 40px;
-}
-button {
-  min-width: 40px;
-}
-label:has(> input[type="checkbox"]),
-label:has(> input[type="radio"]) {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
 input[type="checkbox"],
 input[type="radio"] {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-}
-table td,
-table th {
-  height: 40px;
-}
-
-/* One look for every form field: control-border, radius-sm, card ground. */
-input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
-select,
-textarea {
-  border: 1px solid var(--control-border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-card);
-  color: var(--ink);
-  padding-inline: 14px;
-  font-size: 15px;
+  accent-color: var(--brand);
 }
 
 ::placeholder {
