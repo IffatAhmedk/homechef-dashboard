@@ -34,6 +34,8 @@ interface CartLine {
   price?: number;
 }
 
+export const maxDuration = 30;
+
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
 
 export async function POST(req: NextRequest) {
@@ -76,55 +78,55 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const order = await prisma.$transaction(async (tx) => {
-      const menuItems = await tx.menuItem.findMany({
-        where: { id: { in: items.map((i) => i.menuItemId) } },
-      });
+    // Look everything up first, so the transaction below only has a few quick writes to do.
+    const menuItems = await prisma.menuItem.findMany({ where: { id: { in: items.map((i) => i.menuItemId) } } });
 
-      let total = 0;
-      const orderItemsData = items.map((line) => {
-        const menuItem = menuItems.find((m) => m.id === line.menuItemId);
-        if (!menuItem) throw new Error(`Menu item ${line.menuItemId} not found`);
-        if (!menuItem.isAvailable) throw new Error(`${menuItem.name} is currently unavailable`);
-        const priceAtSale = line.price != null ? line.price : menuItem.price;
-        total += priceAtSale * line.quantity;
-        return {
-          menuItemId: menuItem.id,
-          quantity: line.quantity,
-          priceAtSale,
-          costAtSale: menuItem.costPrice,
-          packagingCostAtSale: menuItem.packagingCostPrice,
-        };
-      });
-
-      if (discountAmount > total) throw new Error("Discount can't exceed the items subtotal");
-
-      const resolvedAddress = address?.trim() || "";
-      const customer = await resolveCustomer(tx, { customerId, name, phone, address });
-
-      // Deals draw down their base items; plain items draw down themselves.
-      const need = await baseRequirements(tx, items);
-      await assertStockCovers(tx, need);
-      await applyStockDelta(tx, need, "take");
-
-      return tx.order.create({
-        data: {
-          customerId: customer.id,
-          channel: channel ?? "DIRECT",
-          status: (status as never) ?? "PENDING",
-          deliveryAddress: resolvedAddress,
-          notes: notes ?? null,
-          totalAmount: total - discountAmount + deliveryChargeAmount + tipAmount,
-          discount: discountAmount,
-          deliveryCharge: deliveryChargeAmount,
-          tip: tipAmount,
-          createdAt: orderDate,
-          updatedAt: orderDate,
-          items: { create: orderItemsData },
-        },
-        include: { items: { include: { menuItem: true } }, customer: true },
-      });
+    let total = 0;
+    const orderItemsData = items.map((line) => {
+      const menuItem = menuItems.find((m) => m.id === line.menuItemId);
+      if (!menuItem) throw new Error(`Menu item ${line.menuItemId} not found`);
+      if (!menuItem.isAvailable) throw new Error(`${menuItem.name} is currently unavailable`);
+      const priceAtSale = line.price != null ? line.price : menuItem.price;
+      total += priceAtSale * line.quantity;
+      return {
+        menuItemId: menuItem.id,
+        quantity: line.quantity,
+        priceAtSale,
+        costAtSale: menuItem.costPrice,
+        packagingCostAtSale: menuItem.packagingCostPrice,
+      };
     });
+    if (discountAmount > total) throw new Error("Discount can't exceed the items subtotal");
+
+    // Deals draw down their base items; plain items draw down themselves.
+    const need = await baseRequirements(prisma, items);
+
+    const order = await prisma.$transaction(
+      async (tx) => {
+        const customer = await resolveCustomer(tx, { customerId, name, phone, address });
+        await assertStockCovers(tx, need);
+        await applyStockDelta(tx, need, "take");
+
+        return tx.order.create({
+          data: {
+            customerId: customer.id,
+            channel: channel ?? "DIRECT",
+            status: (status as never) ?? "PENDING",
+            deliveryAddress: address?.trim() || "",
+            notes: notes ?? null,
+            totalAmount: total - discountAmount + deliveryChargeAmount + tipAmount,
+            discount: discountAmount,
+            deliveryCharge: deliveryChargeAmount,
+            tip: tipAmount,
+            createdAt: orderDate,
+            updatedAt: orderDate,
+            items: { create: orderItemsData },
+          },
+          include: { items: { include: { menuItem: true } }, customer: true },
+        });
+      },
+      { maxWait: 10_000, timeout: 20_000 }
+    );
 
     await syncOrderStock(prisma, order.id);
     return NextResponse.json(order, { status: 201 });

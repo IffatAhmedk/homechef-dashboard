@@ -115,7 +115,7 @@ export async function recordStockEntry(ingredientId: string, entry: StockEntry) 
       }
     }
     return { priceChanged, backfillFrom };
-  });
+  }, { maxWait: 10_000, timeout: 20_000 });
 
   if (result.priceChanged) await recomputeItemsUsingIngredient(ingredientId);
   if (result.backfillFrom) {

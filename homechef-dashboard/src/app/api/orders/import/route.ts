@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
             items: { create: itemsData },
           },
         });
-      });
+      }, { maxWait: 10_000, timeout: 20_000 });
 
       await syncOrderStock(prisma, order.id);
       results.push({ order_ref: ref, status: "ok", orderId: order.id });

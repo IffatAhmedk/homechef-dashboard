@@ -14,6 +14,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json(order);
 }
 
+export const maxDuration = 30;
+
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
 
 interface EditBody {
@@ -64,69 +66,74 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   try {
-    const updated = await prisma.$transaction(async (tx) => {
-      const existing = await tx.order.findUnique({ where: { id }, include: { items: true, customer: true } });
-      if (!existing) throw new Error("Order not found");
-      if (existing.channel !== "DIRECT") {
-        throw new Error("Only direct orders can be edited — Foodpanda orders come from the imports");
-      }
+    // Look everything up first, so the transaction below only has a few quick writes to do.
+    const existing = await prisma.order.findUnique({ where: { id }, include: { items: true, customer: true } });
+    if (!existing) throw new Error("Order not found");
+    if (existing.channel !== "DIRECT") {
+      throw new Error("Only direct orders can be edited — Foodpanda orders come from the imports");
+    }
 
-      // Put the old items back in stock, then take the new ones out.
-      await applyStockDelta(tx, await baseRequirements(tx, existing.items), "restore");
-      const oldByMenuItem = new Map(existing.items.map((i) => [i.menuItemId, i]));
-      const menuItems = await tx.menuItem.findMany({ where: { id: { in: items.map((i) => i.menuItemId) } } });
+    const oldByMenuItem = new Map(existing.items.map((i) => [i.menuItemId, i]));
+    const menuItems = await prisma.menuItem.findMany({ where: { id: { in: items.map((i) => i.menuItemId) } } });
 
-      let subtotal = 0;
-      const itemsData = items.map((line) => {
-        const menuItem = menuItems.find((m) => m.id === line.menuItemId);
-        if (!menuItem) throw new Error(`Menu item ${line.menuItemId} not found`);
-        const previous = oldByMenuItem.get(line.menuItemId);
-        if (!previous && !menuItem.isAvailable) throw new Error(`${menuItem.name} is currently unavailable`);
-        const priceAtSale = line.price != null ? line.price : (previous?.priceAtSale ?? menuItem.price);
-        subtotal += priceAtSale * line.quantity;
-        return {
-          menuItemId: menuItem.id,
-          quantity: line.quantity,
-          priceAtSale,
-          // Keep the cost the order was originally booked at for lines that were already on it.
-          costAtSale: previous ? previous.costAtSale : menuItem.costPrice,
-          packagingCostAtSale: previous ? previous.packagingCostAtSale : menuItem.packagingCostPrice,
-        };
-      });
-      if (discount > subtotal) throw new Error("Discount can't exceed the items subtotal");
-
-      const need = await baseRequirements(tx, items);
-      await assertStockCovers(tx, need);
-      await applyStockDelta(tx, need, "take");
-
-      // Same customer, unchanged phone: keep the link instead of minting a placeholder customer.
-      const keepCustomer =
-        !body.customerId && (!body.phone?.trim() || body.phone.trim() === existing.customer.phone);
-      const customer = await resolveCustomer(tx, {
-        customerId: body.customerId ?? (keepCustomer ? existing.customerId : undefined),
-        name: body.name!,
-        phone: body.phone,
-        address: body.address,
-      });
-
-      await tx.orderItem.deleteMany({ where: { orderId: id } });
-      return tx.order.update({
-        where: { id },
-        data: {
-          customerId: customer.id,
-          ...(body.status && { status: body.status as never }),
-          deliveryAddress: body.address?.trim() ?? existing.deliveryAddress,
-          notes: body.notes?.trim() || null,
-          ...(orderDate && { createdAt: orderDate }),
-          totalAmount: subtotal - discount + deliveryCharge + tip,
-          discount,
-          deliveryCharge,
-          tip,
-          items: { create: itemsData },
-        },
-        include,
-      });
+    let subtotal = 0;
+    const itemsData = items.map((line) => {
+      const menuItem = menuItems.find((m) => m.id === line.menuItemId);
+      if (!menuItem) throw new Error(`Menu item ${line.menuItemId} not found`);
+      const previous = oldByMenuItem.get(line.menuItemId);
+      if (!previous && !menuItem.isAvailable) throw new Error(`${menuItem.name} is currently unavailable`);
+      const priceAtSale = line.price != null ? line.price : (previous?.priceAtSale ?? menuItem.price);
+      subtotal += priceAtSale * line.quantity;
+      return {
+        menuItemId: menuItem.id,
+        quantity: line.quantity,
+        priceAtSale,
+        // Keep the cost the order was originally booked at for lines that were already on it.
+        costAtSale: previous ? previous.costAtSale : menuItem.costPrice,
+        packagingCostAtSale: previous ? previous.packagingCostAtSale : menuItem.packagingCostPrice,
+      };
     });
+    if (discount > subtotal) throw new Error("Discount can't exceed the items subtotal");
+
+    const [oldNeed, need] = await Promise.all([baseRequirements(prisma, existing.items), baseRequirements(prisma, items)]);
+
+    // Same customer, unchanged phone: keep the link instead of minting a placeholder customer.
+    const keepCustomer = !body.customerId && (!body.phone?.trim() || body.phone.trim() === existing.customer.phone);
+
+    const updated = await prisma.$transaction(
+      async (tx) => {
+        // Put the old items back in stock, then take the new ones out.
+        await applyStockDelta(tx, oldNeed, "restore");
+        await assertStockCovers(tx, need);
+        await applyStockDelta(tx, need, "take");
+
+        const customer = await resolveCustomer(tx, {
+          customerId: body.customerId ?? (keepCustomer ? existing.customerId : undefined),
+          name: body.name!,
+          phone: body.phone,
+          address: body.address,
+        });
+
+        await tx.orderItem.deleteMany({ where: { orderId: id } });
+        return tx.order.update({
+          where: { id },
+          data: {
+            customerId: customer.id,
+            ...(body.status && { status: body.status as never }),
+            deliveryAddress: body.address?.trim() ?? existing.deliveryAddress,
+            notes: body.notes?.trim() || null,
+            ...(orderDate && { createdAt: orderDate }),
+            totalAmount: subtotal - discount + deliveryCharge + tip,
+            discount,
+            deliveryCharge,
+            tip,
+            items: { create: itemsData },
+          },
+          include,
+        });
+      },
+      { maxWait: 10_000, timeout: 20_000 }
+    );
     await syncOrderStock(prisma, id);
     return NextResponse.json(updated);
   } catch (err) {
