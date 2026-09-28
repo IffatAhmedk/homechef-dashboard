@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, Wheat, Wallet, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, Wheat, Wallet, PanelLeftClose, PanelLeftOpen, LogIn } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { SignOutButton } from "@/components/SignOutButton";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 const PAGES = [
@@ -21,6 +24,7 @@ const STORAGE_KEY = "rozana-sidebar-collapsed";
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
     try {
@@ -76,6 +80,21 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <div className={cn("space-y-1 border-t border-line px-3 py-3", collapsed && "lg:px-2")}>
+        {session && <p className={cn("truncate px-4 text-caption text-ink-muted", collapsed && "lg:hidden")}>{session.user.name || session.user.email}</p>}
+        {session || isPending ? (
+          <SignOutButton compact={collapsed} />
+        ) : (
+          <>
+            <p className={cn("px-4 text-caption text-ink-muted", collapsed && "lg:hidden")}>Preview: no data is shown.</p>
+            <Link href="/preview/exit" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start", collapsed && "justify-center px-0")}>
+              <LogIn size={20} strokeWidth={2.2} />
+              <span className={cn(collapsed && "hidden")}>Sign in</span>
+            </Link>
+          </>
+        )}
+      </div>
     </aside>
   );
 }
