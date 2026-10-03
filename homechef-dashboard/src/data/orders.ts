@@ -55,8 +55,8 @@ export async function findCustomers(query: string): Promise<CustomerMatch[]> {
   return res.ok ? res.json() : [];
 }
 
-export async function importOrders<T = Record<string, unknown>>(kind: "csv" | "foodpanda-summary" | "foodpanda-invoices", body: unknown) {
-  const url = { csv: "/api/orders/import", "foodpanda-summary": "/api/orders/import-foodpanda", "foodpanda-invoices": "/api/orders/import-foodpanda-invoice" }[kind];
+export async function importOrders<T = Record<string, unknown>>(kind: "csv" | "foodpanda-invoices", body: unknown) {
+  const url = { csv: "/api/orders/import", "foodpanda-invoices": "/api/orders/import-foodpanda-invoice" }[kind];
   const result = await send<T>(url, "POST", body);
   if (result.ok) await refreshOrders();
   return result;
