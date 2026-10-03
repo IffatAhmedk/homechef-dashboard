@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, StockMovementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { recomputeItemsUsingIngredient } from "@/lib/recipe-cost";
 
@@ -144,14 +144,20 @@ function ingredientsFor(nodes: Map<string, RecipeNode>, itemId: string, servings
 /**
  * Rebuilds the stock movements caused by these orders from their current items and status: a sale
  * normally, wastage for a cancelled Foodpanda order (food was already made), nothing for other
- * cancellations. Safe to call again whenever an order changes. Ingredients are only touched once
- * their stock is being tracked (an opening count or purchase dated on/before the order).
+ * cancellations. Safe to call again whenever an order changes.
+ *
+ * The cost is locked in the first time an order's ingredients are recorded, at whatever the
+ * ingredient's price was then — later calls (a status change, an unrelated invoice refresh, editing
+ * a different order) never revalue an order whose ingredients and quantities haven't actually
+ * changed. Only a genuine change to the items themselves reprices it, at today's prices. Marking an
+ * order cancelled (sale → wastage) or restoring it keeps the original locked cost. Ingredients are
+ * only touched once their stock is being tracked (an opening count or purchase dated on/before the
+ * order).
  */
 export async function syncOrdersStock(db: Db, orderIds: string[]) {
   if (orderIds.length === 0) return;
-  await db.stockMovement.deleteMany({ where: { orderId: { in: orderIds } } });
 
-  const [orders, menuItems] = await Promise.all([
+  const [orders, menuItems, existingMovements] = await Promise.all([
     db.order.findMany({
       where: { id: { in: orderIds } },
       select: { id: true, createdAt: true, status: true, channel: true, items: { select: { menuItemId: true, quantity: true } } },
@@ -159,19 +165,65 @@ export async function syncOrdersStock(db: Db, orderIds: string[]) {
     db.menuItem.findMany({
       select: { id: true, batchYield: true, recipeLines: { select: { ingredientId: true, componentItemId: true, quantity: true } } },
     }),
+    db.stockMovement.findMany({
+      where: { orderId: { in: orderIds }, type: { in: ["SALE", "WASTAGE"] } },
+      select: { orderId: true, ingredientId: true, quantity: true, type: true },
+    }),
   ]);
   const nodes = new Map(menuItems.map((m) => [m.id, { yield: m.batchYield > 0 ? m.batchYield : 1, lines: m.recipeLines }]));
 
+  const existingByOrder = new Map<string, Map<string, { quantity: number; type: StockMovementType }>>();
+  for (const m of existingMovements) {
+    if (!m.orderId) continue;
+    const forOrder = existingByOrder.get(m.orderId) ?? new Map();
+    forOrder.set(m.ingredientId, { quantity: m.quantity, type: m.type });
+    existingByOrder.set(m.orderId, forOrder);
+  }
+
   const perOrder = new Map<string, Map<string, number>>();
   const allIngredientIds = new Set<string>();
+  const toClear: string[] = [];
+  const toFlip: { orderId: string; type: StockMovementType }[] = [];
+  const toReprice: string[] = [];
+
   for (const order of orders) {
-    if (order.status === "CANCELLED" && order.channel !== "FOODPANDA") continue;
+    const isWastageOnly = order.status === "CANCELLED" && order.channel !== "FOODPANDA";
     const needs = new Map<string, number>();
-    for (const item of order.items) ingredientsFor(nodes, item.menuItemId, item.quantity, needs);
-    if (needs.size === 0) continue;
+    if (!isWastageOnly) {
+      for (const item of order.items) ingredientsFor(nodes, item.menuItemId, item.quantity, needs);
+    }
+    const type: StockMovementType = order.status === "CANCELLED" ? "WASTAGE" : "SALE";
+    const prior = existingByOrder.get(order.id) ?? new Map();
+
+    if (needs.size === 0) {
+      if (prior.size > 0) toClear.push(order.id);
+      continue;
+    }
+
+    const sameIngredients =
+      needs.size === prior.size &&
+      [...needs].every(([ingredientId, amount]) => {
+        const p = prior.get(ingredientId);
+        return p && Math.abs(p.quantity - -Math.round(amount * 1000) / 1000) < 1e-6;
+      });
+
+    if (sameIngredients) {
+      if ([...prior.values()].some((p) => p.type !== type)) toFlip.push({ orderId: order.id, type });
+      continue; // Same physical consumption — keep whatever cost was locked in the first time.
+    }
+
+    toReprice.push(order.id);
     perOrder.set(order.id, needs);
     needs.forEach((_, id) => allIngredientIds.add(id));
   }
+
+  await Promise.all([
+    toClear.length > 0 ? db.stockMovement.deleteMany({ where: { orderId: { in: toClear } } }) : Promise.resolve(),
+    ...toFlip.map((f) => db.stockMovement.updateMany({ where: { orderId: f.orderId }, data: { type: f.type } })),
+  ]);
+
+  if (toReprice.length === 0) return;
+  await db.stockMovement.deleteMany({ where: { orderId: { in: toReprice } } });
   if (allIngredientIds.size === 0) return;
 
   const ids = [...allIngredientIds];
