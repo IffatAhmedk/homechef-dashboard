@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, Wheat, Wallet, PanelLeftClose, PanelLeftOpen, LogIn } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, Wheat, Wallet, PanelLeftClose, PanelLeftOpen, LogIn, Store } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { SignOutButton } from "@/components/SignOutButton";
 import { authClient } from "@/lib/auth-client";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const PAGES = [
   { href: "/admin-dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/admin-dashboard/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin-dashboard/direct", label: "Direct orders", icon: Store },
   { href: "/admin-dashboard/menu", label: "Menu & Inventory", icon: UtensilsCrossed },
   { href: "/admin-dashboard/ingredients", label: "Ingredients", icon: Wheat },
   { href: "/admin-dashboard/invoices", label: "Money", icon: Wallet },

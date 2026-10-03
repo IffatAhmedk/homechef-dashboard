@@ -27,6 +27,10 @@ const emptyAnalytics: Analytics = {
 };
 
 /** What the API returns in preview mode: no real data, ever. Numbers are zero and every list is empty. */
+const emptyDirect = { sales: 0, cost: 0, orderCount: 0, bestSellers: [], orders: [] };
+
 export function previewData(pathname: string) {
-  return pathname === "/api/analytics" ? emptyAnalytics : [];
+  if (pathname === "/api/analytics") return emptyAnalytics;
+  if (pathname === "/api/direct") return emptyDirect;
+  return [];
 }
