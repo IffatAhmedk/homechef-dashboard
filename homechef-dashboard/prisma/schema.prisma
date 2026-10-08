@@ -49,6 +49,38 @@ enum ExpenseCategory {
   OTHER
 }
 
+enum PersonalExpenseCategory {
+  GAS
+  MILK
+  PETROL
+  WAQAR_BALANCE
+  WAQAR_OWES
+  AMMI_OWES
+  RATION
+  ZUHA
+}
+
+/// Household spending — entirely separate from the business Expense model and never counted in
+/// business profit/cost.
+model PersonalExpense {
+  id          String                  @id @default(cuid())
+  category    PersonalExpenseCategory
+  description String
+  amount      Float
+  date        DateTime                @default(now())
+  createdAt   DateTime                @default(now())
+}
+
+/// One line of the month's ration shopping (name and what it cost), so the month's total is just
+/// the sum of its rows.
+model RationItem {
+  id        String   @id @default(cuid())
+  name      String
+  amount    Float
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
 model Customer {
   id        String   @id @default(cuid())
   name      String

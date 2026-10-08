@@ -4,3 +4,4 @@ export * from "./ingredient";
 export * from "./menu";
 export * from "./money";
 export * from "./order";
+export * from "./personal";

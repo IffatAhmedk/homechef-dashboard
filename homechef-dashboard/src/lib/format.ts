@@ -78,3 +78,25 @@ export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
   STARTUP_INVESTMENT: "Startup investment",
   OTHER: "Other",
 };
+
+export const PERSONAL_EXPENSE_CATEGORIES = [
+  "GAS",
+  "MILK",
+  "PETROL",
+  "WAQAR_BALANCE",
+  "WAQAR_OWES",
+  "AMMI_OWES",
+  "RATION",
+  "ZUHA",
+] as const;
+
+export const PERSONAL_EXPENSE_CATEGORY_LABELS: Record<string, string> = {
+  GAS: "Gas",
+  MILK: "Milk",
+  PETROL: "Petrol",
+  WAQAR_BALANCE: "Waqar Balance",
+  WAQAR_OWES: "Waqar Owes",
+  AMMI_OWES: "Ammi Owes",
+  RATION: "Ration",
+  ZUHA: "Zuha",
+};
