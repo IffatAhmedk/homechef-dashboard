@@ -32,11 +32,15 @@ export function OrderItemsEditor({ menu, lines, onChange }: OrderItemsEditorProp
 
   return (
     <div className="space-y-2">
-      {lines.map((line, i) => (
+      {lines.map((line, i) => {
+        // Only offer items that can actually be sold — plus whatever this row already has, so an
+        // order already carrying a since-discontinued item doesn't lose it from view while editing.
+        const options = menu.filter((m) => m.isAvailable || m.id === line.menuItemId);
+        return (
         <div key={i} className="flex items-center gap-2">
           <NativeSelect aria-label="Item" value={line.menuItemId} onChange={(e) => chooseItem(i, e.target.value)} className="flex-1">
             <option value="">Select item…</option>
-            {menu.map((m) => (
+            {options.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name} ({m.category.name})
               </option>
@@ -48,7 +52,8 @@ export function OrderItemsEditor({ menu, lines, onChange }: OrderItemsEditorProp
             <Trash2 size={16} strokeWidth={2.4} /> Remove
           </Button>
         </div>
-      ))}
+        );
+      })}
       <Button variant="ghost" onClick={() => onChange([...lines, emptyLine()])}>
         <Plus size={16} strokeWidth={2.4} /> Add item
       </Button>
