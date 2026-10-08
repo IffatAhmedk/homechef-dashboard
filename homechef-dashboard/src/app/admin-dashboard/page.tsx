@@ -1,94 +1,89 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AddOrderModal } from "@/components/AddOrderModal";
-import { BestSellersCard } from "@/components/BestSellersCard";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
-import { FinancialCards } from "@/components/FinancialCards";
-import { ImportOrdersModal } from "@/components/ImportOrdersModal";
-import { OrderDetailSheet } from "@/components/OrderDetailSheet";
-import { OrderTable } from "@/components/OrderTable";
-import { ProfitBreakdownSheet } from "@/components/ProfitBreakdownSheet";
-import { Section } from "@/components/Section";
+import { ExpensesPanel } from "@/components/ExpensesPanel";
+import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { useAnalytics } from "@/data/analytics";
-import { useOrders } from "@/data/orders";
-import type { RangePreset } from "@/lib/date-range";
-
-const PERIOD_WORDS: Record<RangePreset, string> = {
-  week: "this week",
-  lastWeek: "last week",
-  month: "this month",
-  custom: "in this period",
-};
-
-type Window = "import" | "add" | "profit" | { orderId: string } | null;
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDateRange } from "@/data/analytics";
+import { useDirect } from "@/data/direct";
+import { formatCurrency, formatDateTime, STATUS_LABELS } from "@/lib/format";
 
 export default function OverviewPage() {
-  const { analytics: a, preset, fromISO, toISO } = useAnalytics();
-  const { data: orders = [] } = useOrders(fromISO, toISO);
-  const [open, setOpen] = useState<Window>(null);
-  const close = () => setOpen(null);
-  const period = PERIOD_WORDS[preset];
+  const { fromISO, toISO } = useDateRange();
+  const { data } = useDirect(fromISO, toISO);
+  const [adding, setAdding] = useState(false);
+  const profit = (data?.sales ?? 0) - (data?.cost ?? 0);
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-4xl text-ink">Assalam o Alaikum, Ammi</h1>
-          <p className="text-base text-ink-muted">Here is how Rozana is doing {period}.</p>
-        </div>
-        <DateRangeFilter />
+    <div className="space-y-6">
+      <PageHeader title="Overview" actions={<DateRangeFilter />} />
+
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard label="Sales" value={data?.sales ?? 0} />
+        <StatCard label="Cost" value={data?.cost ?? 0} tone="bad" />
+        <StatCard label="Profit" value={profit} tone={profit >= 0 ? "good" : "bad"} />
       </div>
 
-      <FinancialCards analytics={a} period={period} onProfitClick={() => setOpen("profit")} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_7fr]">
+        <Card>
+          <h2 className="mb-3 font-heading text-lg text-ink">Best sellers</h2>
+          {data && data.bestSellers.length > 0 ? (
+            <ol className="space-y-3">
+              {data.bestSellers.map((item, i) => (
+                <li key={item.menuItemId} className="flex items-baseline justify-between gap-3 text-base">
+                  <span className="font-bold text-ink">
+                    {i + 1}. {item.name}
+                  </span>
+                  <span className="text-ink-muted">{item.quantity} sold</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-base text-ink-muted">Nothing sold yet.</p>
+          )}
+        </Card>
 
-      <Section title="Where the money went">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-          <StatCard size="small" label="Foodpanda sales" value={a?.foodpandaSales ?? 0} />
-          <StatCard size="small" label="Private sales" value={a?.privateSales ?? 0} />
-          <StatCard size="small" label="Average order" value={a?.averageOrderValue ?? 0} />
-          <StatCard size="small" label="Tax withheld" value={a?.taxWithheld ?? 0} hint="Sales and income tax" />
-          <StatCard size="small" label="Foodpanda charges" value={a?.foodpandaCharges ?? 0} hint="Commission, fees, SST" />
-        </div>
-      </Section>
-
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-heading text-xl text-ink">Order history</h2>
-            <Badge tone="good">{a?.successfulCount ?? 0} successful</Badge>
-            <Badge tone="warn">{a?.cancelledCount ?? 0} wastage</Badge>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setOpen("import")}>
-              <Upload size={16} strokeWidth={2.4} /> Upload orders
-            </Button>
-            <Button onClick={() => setOpen("add")}>
-              <Plus size={16} strokeWidth={2.4} /> Add an order
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => setAdding(true)}>
+              <Plus size={16} strokeWidth={2.4} /> Add order
             </Button>
           </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(data?.orders ?? []).map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="text-ink-muted">{formatDateTime(order.createdAt)}</TableCell>
+                  <TableCell className="font-bold text-ink">{order.customerName}</TableCell>
+                  <TableCell>{order.itemCount}</TableCell>
+                  <TableCell className={order.status === "CANCELLED" ? "text-danger" : "text-ink-muted"}>{STATUS_LABELS[order.status] ?? order.status}</TableCell>
+                  <TableCell className="text-right font-bold">{formatCurrency(order.total)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {data && data.orders.length === 0 && <p className="p-6 text-center text-base text-ink-muted">No direct orders in this period.</p>}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_7fr]">
-          <BestSellersCard items={a?.bestSellers ?? []} />
-          <div className="space-y-2">
-            <OrderTable orders={orders} limit={10} onSelect={(order) => setOpen({ orderId: order.id })} />
-            <Link href="/admin-dashboard/orders" className={buttonVariants({ variant: "ghost" })}>
-              See all orders
-            </Link>
-          </div>
-        </div>
-      </section>
+      <ExpensesPanel from={fromISO} to={toISO} />
 
-      {open === "profit" && <ProfitBreakdownSheet analytics={a} period={period} onClose={close} />}
-      {open === "import" && <ImportOrdersModal onClose={close} />}
-      {open === "add" && <AddOrderModal onClose={close} />}
-      {typeof open === "object" && open && <OrderDetailSheet orderId={open.orderId} onClose={close} />}
+      {adding && <AddOrderModal onClose={() => setAdding(false)} />}
     </div>
   );
 }
