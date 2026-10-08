@@ -6,6 +6,7 @@ import { assertStockCovers, applyStockDelta, baseRequirements } from "@/lib/stoc
 
 export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status");
+  const channel = req.nextUrl.searchParams.get("channel");
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
 
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
   const orders = await prisma.order.findMany({
     where: {
       ...(status ? { status: status as never } : {}),
+      ...(channel ? { channel: channel as never } : {}),
       ...(from || to ? { createdAt } : {}),
     },
     include: {

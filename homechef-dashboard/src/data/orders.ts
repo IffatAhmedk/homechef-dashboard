@@ -5,8 +5,13 @@ import { refresh, send } from "./http";
 
 const refreshOrders = () => refresh("/api/orders", "/api/analytics", "/api/customers", "/api/menu", "/api/ingredients", "/api/invoices");
 
-export function useOrders(from?: string, to?: string) {
-  return useSWR<Order[]>(from && to ? `/api/orders?from=${from}&to=${to}` : "/api/orders", fetcher, { refreshInterval: 15000 });
+export function useOrders(from?: string, to?: string, channel?: "DIRECT" | "FOODPANDA") {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (channel) params.set("channel", channel);
+  const query = params.toString();
+  return useSWR<Order[]>(`/api/orders${query ? `?${query}` : ""}`, fetcher, { refreshInterval: 15000 });
 }
 
 export function useOrder(id: string | null) {

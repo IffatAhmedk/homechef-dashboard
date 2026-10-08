@@ -20,11 +20,11 @@ function toDateTimeInput(date: Date) {
 }
 
 /** Add an order by hand, or (with `order`) edit a direct one. The discount is a percentage of the items' total. */
-export function AddOrderModal({ order, onClose }: { order?: Order; onClose: () => void }) {
+export function AddOrderModal({ order, defaultChannel, onClose }: { order?: Order; defaultChannel?: OrderChannel; onClose: () => void }) {
   const { data: menu = [] } = useMenu();
 
   const itemsTotal = (order?.items ?? []).reduce((sum, i) => sum + i.priceAtSale * i.quantity, 0);
-  const [channel, setChannel] = useState<OrderChannel>("DIRECT");
+  const [channel, setChannel] = useState<OrderChannel>(defaultChannel ?? "DIRECT");
   const [status, setStatus] = useState(order?.status ?? "PENDING");
   const [name, setName] = useState(order?.customer.name ?? "");
   const [phone, setPhone] = useState(order?.customer.phone.startsWith("manual-") ? "" : (order?.customer.phone ?? ""));
@@ -100,7 +100,7 @@ export function AddOrderModal({ order, onClose }: { order?: Order; onClose: () =
         </>
       }
     >
-      {!order && (
+      {!order && !defaultChannel && (
         <PillGroup
           label="Where the order came from"
           options={[
