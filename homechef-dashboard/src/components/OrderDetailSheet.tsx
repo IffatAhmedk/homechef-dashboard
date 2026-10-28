@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useOrder } from "@/data/orders";
+import { setOrderStatus, setPaymentStatus, useOrder } from "@/data/orders";
 import { FOODPANDA_COMMISSION_RATE, itemFinancials, orderFinancials } from "@/lib/finance";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 
@@ -25,11 +26,26 @@ function Line({ label, value, bold }: { label: string; value: string; bold?: boo
 export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { data: order } = useOrder(orderId);
   const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
   const money = order ? orderFinancials(order) : null;
 
   const discount = order?.discount ?? 0;
   const deliveryCharge = order?.deliveryCharge ?? 0;
   const tip = order?.tip ?? 0;
+
+  async function markDelivered() {
+    if (!order) return;
+    setBusy(true);
+    await setOrderStatus(order.id, "DELIVERED");
+    setBusy(false);
+  }
+
+  async function togglePayment() {
+    if (!order) return;
+    setBusy(true);
+    await setPaymentStatus(order.id, order.paymentStatus === "PAID" ? "PENDING" : "PAID");
+    setBusy(false);
+  }
 
   return (
     <>
@@ -49,14 +65,27 @@ export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClos
                 <div className="flex flex-col items-end gap-1">
                   <Badge tone={order.channel === "FOODPANDA" ? "brand" : "neutral"}>{order.channel === "FOODPANDA" ? "Foodpanda" : "Direct"}</Badge>
                   <OrderStatusBadge order={order} />
+                  {order.channel === "DIRECT" && <PaymentStatusBadge order={order} />}
                 </div>
               </div>
 
-              {order.channel === "DIRECT" && (
-                <Button variant="ghost" onClick={() => setEditing(true)}>
-                  <Pencil size={16} strokeWidth={2.4} /> Edit this order
-                </Button>
-              )}
+              <div className="flex flex-wrap gap-2">
+                {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+                  <Button size="sm" disabled={busy} onClick={markDelivered}>
+                    Mark delivered
+                  </Button>
+                )}
+                {order.channel === "DIRECT" && (
+                  <Button variant="secondary" size="sm" disabled={busy} onClick={togglePayment}>
+                    {order.paymentStatus === "PAID" ? "Mark unpaid" : "Mark paid"}
+                  </Button>
+                )}
+                {order.channel === "DIRECT" && (
+                  <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+                    <Pencil size={16} strokeWidth={2.4} /> Edit this order
+                  </Button>
+                )}
+              </div>
 
               {order.deliveryAddress && <p className="text-base text-ink-muted">Deliver to: {order.deliveryAddress}</p>}
 

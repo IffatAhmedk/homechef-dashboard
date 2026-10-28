@@ -26,6 +26,7 @@ export function AddOrderModal({ order, defaultChannel, onClose }: { order?: Orde
   const itemsTotal = (order?.items ?? []).reduce((sum, i) => sum + i.priceAtSale * i.quantity, 0);
   const [channel, setChannel] = useState<OrderChannel>(defaultChannel ?? "DIRECT");
   const [status, setStatus] = useState(order?.status ?? "PENDING");
+  const [paymentStatus, setPaymentStatus] = useState(order?.paymentStatus ?? "PENDING");
   const [name, setName] = useState(order?.customer.name ?? "");
   const [phone, setPhone] = useState(order?.customer.phone.startsWith("manual-") ? "" : (order?.customer.phone ?? ""));
   const [customerId, setCustomerId] = useState<string | undefined>();
@@ -70,6 +71,7 @@ export function AddOrderModal({ order, defaultChannel, onClose }: { order?: Orde
       notes: notes || undefined,
       channel,
       status,
+      paymentStatus,
       createdAt: new Date(date).toISOString(),
       discount,
       deliveryCharge: Number(deliveryCharge) || 0,
@@ -131,6 +133,18 @@ export function AddOrderModal({ order, defaultChannel, onClose }: { order?: Orde
       <Field label="Delivery address (optional)">
         <Input value={address} onChange={(e) => setAddress(e.target.value)} />
       </Field>
+
+      {channel === "DIRECT" && (
+        <PillGroup
+          label="Payment"
+          options={[
+            { value: "PENDING", label: "Pending" },
+            { value: "PAID", label: "Paid" },
+          ]}
+          value={paymentStatus}
+          onChange={setPaymentStatus}
+        />
+      )}
 
       <OrderItemsEditor menu={menu} lines={lines} onChange={setLines} />
 

@@ -5,11 +5,12 @@ import { refresh, send } from "./http";
 
 const refreshOrders = () => refresh("/api/orders", "/api/analytics", "/api/customers", "/api/menu", "/api/ingredients", "/api/invoices");
 
-export function useOrders(from?: string, to?: string, channel?: "DIRECT" | "FOODPANDA") {
+export function useOrders(from?: string, to?: string, channel?: "DIRECT" | "FOODPANDA", customerId?: string) {
   const params = new URLSearchParams();
   if (from) params.set("from", from);
   if (to) params.set("to", to);
   if (channel) params.set("channel", channel);
+  if (customerId) params.set("customerId", customerId);
   const query = params.toString();
   return useSWR<Order[]>(`/api/orders${query ? `?${query}` : ""}`, fetcher, { refreshInterval: 15000 });
 }
@@ -30,6 +31,7 @@ export interface OrderDetails {
   notes?: string;
   channel?: "DIRECT" | "FOODPANDA";
   status: string;
+  paymentStatus?: string;
   createdAt?: string;
   discount: number;
   deliveryCharge: number;
@@ -51,6 +53,12 @@ export async function updateOrder(id: string, order: OrderDetails) {
 
 export async function setOrderStatus(id: string, status: string) {
   const result = await send(`/api/orders/${id}`, "PATCH", { status });
+  if (result.ok) await refreshOrders();
+  return result;
+}
+
+export async function setPaymentStatus(id: string, paymentStatus: string) {
+  const result = await send(`/api/orders/${id}`, "PATCH", { paymentStatus });
   if (result.ok) await refreshOrders();
   return result;
 }

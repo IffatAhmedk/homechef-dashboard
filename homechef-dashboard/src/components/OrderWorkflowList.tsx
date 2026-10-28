@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
-import { setOrderStatus } from "@/data/orders";
+import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
+import { setOrderStatus, setPaymentStatus } from "@/data/orders";
 import { formatCurrency, formatDateTime, STATUS_FLOW, STATUS_LABELS } from "@/lib/format";
 import type { Order } from "@/models";
 
@@ -20,6 +21,12 @@ export function OrderWorkflowList({ orders }: { orders: Order[] }) {
   async function move(order: Order, status: string) {
     setBusy(order.id);
     await setOrderStatus(order.id, status);
+    setBusy(null);
+  }
+
+  async function togglePayment(order: Order) {
+    setBusy(order.id);
+    await setPaymentStatus(order.id, order.paymentStatus === "PAID" ? "PENDING" : "PAID");
     setBusy(null);
   }
 
@@ -44,6 +51,7 @@ export function OrderWorkflowList({ orders }: { orders: Order[] }) {
               </button>
               <div className="flex flex-wrap items-center gap-3">
                 <OrderStatusBadge order={order} />
+                {order.channel === "DIRECT" && <PaymentStatusBadge order={order} />}
                 <span className="font-bold text-ink">{formatCurrency(order.totalAmount)}</span>
                 {next && (
                   <Button size="sm" disabled={busy === order.id} onClick={() => move(order, next)}>
@@ -53,6 +61,11 @@ export function OrderWorkflowList({ orders }: { orders: Order[] }) {
                 {!isFinished && (
                   <Button variant="destructive" size="sm" disabled={busy === order.id} onClick={() => move(order, "CANCELLED")}>
                     Cancel
+                  </Button>
+                )}
+                {order.channel === "DIRECT" && (
+                  <Button variant="secondary" size="sm" disabled={busy === order.id} onClick={() => togglePayment(order)}>
+                    {order.paymentStatus === "PAID" ? "Mark unpaid" : "Mark paid"}
                   </Button>
                 )}
               </div>

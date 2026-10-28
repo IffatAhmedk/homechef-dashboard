@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dateFilterFromParams } from "@/lib/date-range";
 import { prisma } from "@/lib/prisma";
 import { resolveCustomer } from "@/lib/customer";
 import { syncOrderStock } from "@/lib/stock-ledger";
@@ -7,18 +8,15 @@ import { assertStockCovers, applyStockDelta, baseRequirements } from "@/lib/stoc
 export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status");
   const channel = req.nextUrl.searchParams.get("channel");
-  const from = req.nextUrl.searchParams.get("from");
-  const to = req.nextUrl.searchParams.get("to");
-
-  const createdAt: { gte?: Date; lte?: Date } = {};
-  if (from) createdAt.gte = new Date(from);
-  if (to) createdAt.lte = new Date(to);
+  const customerId = req.nextUrl.searchParams.get("customerId");
+  const createdAt = dateFilterFromParams(req.nextUrl.searchParams);
 
   const orders = await prisma.order.findMany({
     where: {
       ...(status ? { status: status as never } : {}),
       ...(channel ? { channel: channel as never } : {}),
-      ...(from || to ? { createdAt } : {}),
+      ...(customerId ? { customerId } : {}),
+      ...(createdAt ? { createdAt } : {}),
     },
     include: {
       customer: true,
@@ -39,23 +37,26 @@ interface CartLine {
 export const maxDuration = 30;
 
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
+const VALID_PAYMENT_STATUSES = ["PENDING", "PAID"];
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { customerId, name, phone, address, notes, items, channel, status, createdAt, discount, deliveryCharge, tip } = body as {
-    customerId?: string;
-    name: string;
-    phone?: string;
-    address?: string;
-    notes?: string;
-    items: CartLine[];
-    channel?: "DIRECT" | "FOODPANDA";
-    status?: string;
-    createdAt?: string;
-    discount?: number;
-    deliveryCharge?: number;
-    tip?: number;
-  };
+  const { customerId, name, phone, address, notes, items, channel, status, paymentStatus, createdAt, discount, deliveryCharge, tip } =
+    body as {
+      customerId?: string;
+      name: string;
+      phone?: string;
+      address?: string;
+      notes?: string;
+      items: CartLine[];
+      channel?: "DIRECT" | "FOODPANDA";
+      status?: string;
+      paymentStatus?: string;
+      createdAt?: string;
+      discount?: number;
+      deliveryCharge?: number;
+      tip?: number;
+    };
 
   if (!name) {
     return NextResponse.json({ error: "Customer name is required" }, { status: 400 });
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
   }
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+  if (paymentStatus && !VALID_PAYMENT_STATUSES.includes(paymentStatus)) {
+    return NextResponse.json({ error: "Invalid payment status" }, { status: 400 });
   }
 
   const discountAmount = Number(discount) || 0;
@@ -114,6 +118,7 @@ export async function POST(req: NextRequest) {
             customerId: customer.id,
             channel: channel ?? "DIRECT",
             status: (status as never) ?? "PENDING",
+            paymentStatus: (paymentStatus as never) ?? "PENDING",
             deliveryAddress: address?.trim() || "",
             notes: notes ?? null,
             totalAmount: total - discountAmount + deliveryChargeAmount + tipAmount,

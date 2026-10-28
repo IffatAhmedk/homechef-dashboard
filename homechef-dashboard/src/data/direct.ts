@@ -4,6 +4,7 @@ import { fetcher } from "@/lib/fetcher";
 export interface DirectSummary {
   sales: number;
   cost: number;
+  amountPayable: number;
   orderCount: number;
   bestSellers: { menuItemId: string; name: string; quantity: number; sales: number }[];
   orders: { id: string; createdAt: string; status: string; customerName: string; itemCount: number; total: number }[];

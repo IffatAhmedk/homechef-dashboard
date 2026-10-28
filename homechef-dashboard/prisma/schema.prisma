@@ -22,6 +22,11 @@ enum OrderChannel {
   FOODPANDA
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
 enum StockMovementType {
   OPENING
   PURCHASE
@@ -176,6 +181,9 @@ model Order {
   customer            Customer     @relation(fields: [customerId], references: [id])
   channel             OrderChannel @default(DIRECT)
   status              OrderStatus  @default(PENDING)
+  /// Whether the customer has paid. Only meaningful for DIRECT orders — Foodpanda
+  /// payment is reconciled separately via the Invoice/payableAmount fields below.
+  paymentStatus       PaymentStatus @default(PENDING)
   deliveryAddress     String
   notes               String?
   /// Final amount the customer pays: items subtotal - discount + deliveryCharge + tip.

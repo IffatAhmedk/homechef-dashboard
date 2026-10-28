@@ -8,18 +8,24 @@ export async function GET(req: NextRequest) {
   const to = req.nextUrl.searchParams.get("to") ?? new Date().toISOString();
   const range = { gte: new Date(from), lte: new Date(to) };
 
-  const [orders, expenses] = await Promise.all([
+  const [orders, expenses, payableAgg] = await Promise.all([
     prisma.order.findMany({
       where: { channel: "DIRECT", createdAt: range },
       include: { customer: true, items: { include: { menuItem: true } } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.expense.findMany({ where: { date: range } }),
+    // Not scoped to the period — this is money currently owed, not money owed within the selected range.
+    prisma.order.aggregate({
+      where: { channel: "DIRECT", status: { not: "CANCELLED" }, paymentStatus: "PENDING" },
+      _sum: { totalAmount: true },
+    }),
   ]);
 
   const sold = orders.filter((o) => o.status !== "CANCELLED");
   const sales = sold.reduce((sum, o) => sum + orderFinancials(o).revenue, 0);
   const cost = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const amountPayable = payableAgg._sum.totalAmount ?? 0;
 
   const totals = new Map<string, { name: string; quantity: number; sales: number }>();
   for (const order of sold) {
@@ -38,6 +44,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     sales,
     cost,
+    amountPayable,
     orderCount: sold.length,
     bestSellers,
     orders: orders.map((o) => ({

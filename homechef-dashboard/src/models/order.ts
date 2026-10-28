@@ -14,6 +14,7 @@ export interface Order {
   id: string;
   channel: OrderChannel;
   status: string;
+  paymentStatus: string;
   totalAmount: number;
   discount?: number;
   deliveryCharge?: number;

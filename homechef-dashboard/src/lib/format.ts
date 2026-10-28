@@ -51,6 +51,11 @@ export const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "bg-danger-soft text-danger border-danger-soft",
 };
 
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Payment pending",
+  PAID: "Paid",
+};
+
 export const EXPENSE_CATEGORIES = [
   "INGREDIENTS",
   "PACKAGING",
