@@ -91,6 +91,12 @@ export async function importMenuItems(rows: unknown[]) {
   return result;
 }
 
+export async function extractMenuFromFile(mediaType: string, data: string) {
+  const result = await send<ImportSummary>("/api/menu/extract", "POST", { mediaType, data });
+  if (result.ok) await refreshMenu();
+  return result;
+}
+
 export async function importRecipes(rows: unknown[]) {
   const result = await send<ImportSummary>("/api/menu/recipes-import", "POST", { rows });
   if (result.ok) await refreshMenu();

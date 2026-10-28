@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Printer, Upload } from "lucide-react";
+import { Printer, Sparkles, Upload } from "lucide-react";
 import { AddMenuItemModal } from "@/components/AddMenuItemModal";
 import { Button } from "@/components/ui/button";
 import { CreateMenuButton } from "@/components/CreateMenuButton";
@@ -13,13 +13,14 @@ import { MenuTable } from "@/components/MenuTable";
 import { PageHeader } from "@/components/PageHeader";
 import { ProfitByItemCard } from "@/components/ProfitByItemCard";
 import { RecipeModal } from "@/components/RecipeModal";
+import { UploadMenuModal } from "@/components/UploadMenuModal";
 import { useDialogs } from "@/components/DialogProvider";
 import { deleteMenuItem, getRecipe, updateMenuItem, useCategories, useMenu } from "@/data/menu";
 import { buttonVariants } from "@/components/ui/button";
 import type { MenuItem } from "@/models";
 
 type Window =
-  | { kind: "add" | "newDeal" | "import" }
+  | { kind: "add" | "newDeal" | "import" | "upload" }
   | { kind: "edit" | "recipe"; item: MenuItem }
   | { kind: "editDeal"; deal: EditableDeal }
   | null;
@@ -76,6 +77,9 @@ export default function MenuPage() {
             <Button variant="secondary" onClick={() => setOpen({ kind: "import" })}>
               <Upload size={16} /> Import CSV
             </Button>
+            <Button variant="secondary" onClick={() => setOpen({ kind: "upload" })}>
+              <Sparkles size={16} /> Upload menu
+            </Button>
             <CreateMenuButton onCreateItem={() => setOpen({ kind: "add" })} onCreateDeal={() => setOpen({ kind: "newDeal" })} />
           </>
         }
@@ -98,6 +102,7 @@ export default function MenuPage() {
       {open?.kind === "edit" && <EditMenuItemModal item={open.item} onClose={close} />}
       {open?.kind === "recipe" && <RecipeModal item={open.item} onClose={close} />}
       {open?.kind === "import" && <ImportMenuModal onClose={close} />}
+      {open?.kind === "upload" && <UploadMenuModal onClose={close} />}
     </div>
   );
 }
