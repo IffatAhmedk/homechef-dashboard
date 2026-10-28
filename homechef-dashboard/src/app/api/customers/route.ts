@@ -13,6 +13,7 @@ export async function GET() {
     const totalSpent = c.orders.reduce((sum, o) => sum + o.totalAmount, 0);
     return {
       ...c,
+      orders: undefined,
       orderCount: c.orders.length,
       totalSpent,
       lastOrderAt: c.orders[0]?.createdAt ?? null,
