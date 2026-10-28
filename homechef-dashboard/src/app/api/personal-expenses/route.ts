@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dateFilterFromParams } from "@/lib/date-range";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-  const from = req.nextUrl.searchParams.get("from");
-  const to = req.nextUrl.searchParams.get("to");
-  const date: { gte?: Date; lte?: Date } = {};
-  if (from) date.gte = new Date(from);
-  if (to) date.lte = new Date(to);
-
+  const date = dateFilterFromParams(req.nextUrl.searchParams);
   const expenses = await prisma.personalExpense.findMany({
-    where: from || to ? { date } : undefined,
+    where: date ? { date } : undefined,
     orderBy: { date: "desc" },
   });
   return NextResponse.json(expenses);

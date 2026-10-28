@@ -44,6 +44,17 @@ export function rangeForPreset(preset: RangePreset, custom?: { from: string; to:
   return { from, to: endOfDay(now) };
 }
 
+/** Reads ?from and ?to off a request's query string as a Prisma date filter — undefined if neither is given. */
+export function dateFilterFromParams(searchParams: URLSearchParams): { gte?: Date; lte?: Date } | undefined {
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  if (!from && !to) return undefined;
+  const filter: { gte?: Date; lte?: Date } = {};
+  if (from) filter.gte = new Date(from);
+  if (to) filter.lte = new Date(to);
+  return filter;
+}
+
 export function eachDay({ from, to }: DateRange): string[] {
   const days: string[] = [];
   const cursor = startOfDay(from);

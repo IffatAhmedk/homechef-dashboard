@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { AddOrderModal } from "@/components/AddOrderModal";
 import { Button } from "@/components/ui/button";
+import { ImportOrdersCsv } from "@/components/ImportOrdersCsv";
+import { Modal } from "@/components/Modal";
 import { OrderWorkflowList } from "@/components/OrderWorkflowList";
 import { PageHeader } from "@/components/PageHeader";
 import { PillGroup } from "@/components/PillGroup";
@@ -16,6 +18,7 @@ export default function OrdersPage() {
   const { data: orders = [] } = useOrders();
   const [filter, setFilter] = useState("ALL");
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const shown = filter === "ALL" ? orders : orders.filter((o) => o.status === filter);
 
@@ -25,14 +28,24 @@ export default function OrdersPage() {
         title="Orders"
         subtitle="Kitchen & delivery workflow — move orders through their status."
         actions={
-          <Button onClick={() => setAdding(true)}>
-            <Plus size={16} strokeWidth={2.4} /> Add order
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setImporting(true)}>
+              <Upload size={16} strokeWidth={2.4} /> Import CSV
+            </Button>
+            <Button onClick={() => setAdding(true)}>
+              <Plus size={16} strokeWidth={2.4} /> Add order
+            </Button>
+          </>
         }
       />
       <PillGroup label="Show orders" options={FILTERS} value={filter} onChange={setFilter} />
       <OrderWorkflowList orders={shown} />
       {adding && <AddOrderModal onClose={() => setAdding(false)} />}
+      {importing && (
+        <Modal title="Import orders" onClose={() => setImporting(false)}>
+          <ImportOrdersCsv onClose={() => setImporting(false)} />
+        </Modal>
+      )}
     </div>
   );
 }
