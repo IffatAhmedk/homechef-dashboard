@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Rozana design system tokens — light (cream) by default, dark (evening) follows the system setting. */
+/* HomeChef design system tokens — light (cream) by default, dark (evening) follows the system setting. */
 :root {
   /* Softened from the brand board's pure cream/charcoal so long sessions are easy on the eyes. */
   --surface-ground: #efe8d8;
@@ -59,7 +59,7 @@
 }
 
 @theme inline {
-  /* shadcn/ui's colour names, pointed at the Rozana palette */
+  /* shadcn/ui's colour names, pointed at the HomeChef palette */
   --color-background: var(--surface-ground);
   --color-foreground: var(--ink);
   --color-card-foreground: var(--ink);

@@ -18,9 +18,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="flex min-h-screen items-center justify-center bg-ground p-4">
       <div className="w-full max-w-sm space-y-6 rounded-lg bg-card p-8 text-center shadow-card">
         <div>
-          <p className="font-wordmark text-3xl text-leaf">Rozana</p>
-          <p className="font-urdu text-3xl text-ink">گھر کا کھانا</p>
-          <p className="text-caption text-ink-muted">Ghar ka khana, rozana.</p>
+          <p className="font-wordmark text-3xl text-leaf">HomeChef</p>
+          <p className="text-3xl text-ink">Dashboard</p>
+          <p className="text-caption text-ink-muted">Home-style meals, ordered fresh.</p>
         </div>
 
         <div className="space-y-1">

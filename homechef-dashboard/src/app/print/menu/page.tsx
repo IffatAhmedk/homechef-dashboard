@@ -16,9 +16,9 @@ export default async function MenuPrintPage() {
     <div className="mx-auto max-w-2xl bg-card p-10 text-ink print:p-0">
       <PrintTrigger />
       <header className="mb-8 text-center">
-        <h1 className="font-wordmark text-4xl text-leaf">Rozana</h1>
-        <p className="font-urdu text-3xl text-ink">گھر کا کھانا</p>
-        <p className="text-caption text-ink-muted">Ghar ka khana, rozana.</p>
+        <h1 className="font-wordmark text-4xl text-leaf">HomeChef</h1>
+        <p className="text-3xl text-ink">Dashboard</p>
+        <p className="text-caption text-ink-muted">Home-style meals, ordered fresh.</p>
       </header>
 
       {categories.map(

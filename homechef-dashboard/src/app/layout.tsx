@@ -20,8 +20,8 @@ const nastaliq = Noto_Nastaliq_Urdu({
 });
 
 export const metadata: Metadata = {
-  title: "Rozana — Ghar Ka Khana",
-  description: "Home-style meals, ordered fresh. Rozana ghar ka khana.",
+  title: "HomeChef Dashboard",
+  description: "Home-style meals, ordered fresh. Run by HomeChef.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

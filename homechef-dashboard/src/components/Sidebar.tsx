@@ -47,8 +47,8 @@ export function Sidebar() {
     <aside className={cn("border-b border-line bg-card lg:shrink-0 lg:border-b-0 lg:border-r", collapsed ? "lg:w-20" : "lg:w-64")}>
       <div className={cn("flex items-start justify-between gap-2 px-4 py-4", collapsed && "lg:justify-center lg:px-2")}>
         <div className={cn(collapsed && "lg:hidden")}>
-          <p className="font-wordmark text-xl text-leaf">Rozana</p>
-          <p className="font-urdu text-xl text-ink">گھر کا کھانا</p>
+          <p className="font-wordmark text-xl text-leaf">HomeChef</p>
+          <p className="text-xl text-ink">Dashboard</p>
         </div>
         <button
           onClick={toggle}
