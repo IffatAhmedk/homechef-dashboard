@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, PanelLeftClose, PanelLeftOpen, LogIn, NotebookPen, UploadCloud, PiggyBank, ShoppingBasket } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, PanelLeftClose, PanelLeftOpen, LogIn, NotebookPen, UploadCloud, PiggyBank, ShoppingBasket, Bot } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { SignOutButton } from "@/components/SignOutButton";
 import { authClient } from "@/lib/auth-client";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 const PAGES = [
   { href: "/admin-dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin-dashboard/agent", label: "Assistant", icon: Bot },
   { href: "/admin-dashboard/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin-dashboard/log", label: "Log", icon: NotebookPen },
   { href: "/admin-dashboard/foodpanda", label: "Upload Foodpanda", icon: UploadCloud },
