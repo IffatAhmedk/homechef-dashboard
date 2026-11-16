@@ -20,6 +20,12 @@ export async function deletePersonalExpense(id: string) {
   return result;
 }
 
+export async function updatePersonalExpenseCategory(id: string, category: PersonalExpenseCategory) {
+  const result = await send(`/api/personal-expenses/${id}`, "PATCH", { category });
+  if (result.ok) await refresh("/api/personal-expenses");
+  return result;
+}
+
 export function useRationItems(from?: string, to?: string) {
   const query = from && to ? `?from=${from}&to=${to}` : "";
   return useSWR<RationItemEntry[]>(`/api/ration${query}`, fetcher);

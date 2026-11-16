@@ -1,4 +1,4 @@
-export type PersonalExpenseCategory = "GAS" | "MILK" | "PETROL" | "WAQAR_BALANCE" | "WAQAR_OWES" | "AMMI_OWES" | "RATION" | "ZUHA";
+export type PersonalExpenseCategory = "GAS" | "MILK" | "PETROL" | "WAQAR_BALANCE" | "WAQAR_OWES" | "AMMI_OWES" | "RATION" | "ZUHA" | "PENDING";
 
 export interface PersonalExpenseEntry {
   id: string;

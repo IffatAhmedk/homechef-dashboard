@@ -24,7 +24,7 @@ export function useExpenses(from: string, to: string) {
   return useSWR<Expense[]>(`/api/expenses?from=${from}&to=${to}`, fetcher);
 }
 
-export async function addExpense(expense: { description: string; amount: number; category: string }) {
+export async function addExpense(expense: { description: string; amount: number; category: string; date?: string }) {
   const result = await send("/api/expenses", "POST", expense);
   if (result.ok) await refresh("/api/expenses", "/api/analytics");
   return result;

@@ -103,5 +103,6 @@ export const PERSONAL_EXPENSE_CATEGORY_LABELS: Record<string, string> = {
   WAQAR_OWES: "Waqar Owes",
   AMMI_OWES: "Ammi Owes",
   RATION: "Ration",
+  PENDING: "Pending sort",
   ZUHA: "Zuha",
 };

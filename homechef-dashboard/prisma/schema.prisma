@@ -63,6 +63,9 @@ enum PersonalExpenseCategory {
   AMMI_OWES
   RATION
   ZUHA
+  /// Set by the receipt-swipe tool when a receipt is classified personal — sorted into a real
+  /// category afterward via the pending-expense sorter, never chosen manually.
+  PENDING
 }
 
 /// Household spending — entirely separate from the business Expense model and never counted in
